@@ -10,6 +10,6 @@ It's a two steps pipeline. A first clustering is done using the MMseqs2 software
 ### How to create subfamilies using subfamilies.py
 
 ### How to create families using hhblits.smk
-snakemake -p --snakefile hhblits.smk --configfile CONFIG_FILENAME 
+    snakemake -p --snakefile hhblits.smk --configfile CONFIG_FILENAME 
 
 ## how to assess the quality of the clustering
