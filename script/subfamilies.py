@@ -25,7 +25,7 @@ if not os.path.exists(directory) :
         os.mkdir(directory)                
     except:
         print(directory+' can not be created, creating the outputs in: '+cwd+'/'+os.path.basename(fasta_filename)+'_subfamilies')        
-        directory = cwd+'/'+os.path.basename(fasta_filename)+'_subfamilies'
+        directory = cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering'
         if not os.path.exists(directory) :
             os.mkdir(directory)
         else:            
@@ -128,4 +128,17 @@ for cluster,subfam in cluster2subfam.items() :
 output.close()
 
 
+config_filename = directory+'/config.json'
+output = open(config_filename,'w')
 
+liste = list()
+output.write('{'+'\n')
+output.write('\t\"directory\":\"'+directory+'\",\n')
+output.write('\t\"clusters\":{\n')
+for (path, dirs, files) in os.walk(directory+'/'+'subfamiliesFasta') :
+    for filename in files :
+        liste.append('\t\t\"'+filename.replace('.fa','\"')+':\"'+path+'/'+filename+'\"')
+output.write(',\n'.join(liste)+'\n')
+output.write('\t'+'}'+'\n')
+output.write('}'+'\n')
+output.close()
