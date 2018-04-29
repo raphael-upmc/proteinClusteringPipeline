@@ -3,6 +3,8 @@
 
 import os,sys,re
 from collections import defaultdict
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 
 fasta_filename = sys.argv[1]
@@ -63,6 +65,9 @@ os.system(mmseqs_createtsv_cmd)
 
 
 
+#################################
+### writting the final output ###
+#################################
 
 
 cluster2sequences = defaultdict(set)
@@ -88,7 +93,20 @@ for cluster,sequenceList in cluster2sequences.items() :
 
 l = len(str(subfam))
 
-print('there are '+str(subfam)+' subfams')
+print('the '+str(len(sequence2cluster))+' orfs were clustered in '+str(subfam)+' subfams')
+
+
+
+
+cluster2seqList = defaultdict(list)
+for record in SeqIO.parse(fasta_filename,'fasta') :
+    if record.id in sequence2cluster :
+        cluster2seqList[ sequence2cluster[ record.id ] ].append( SeqRecord(seq=record.seq,id=record.id,description="") )
+    else :
+        continue
+
+os.mkdir(directory+'/'+'subfamiliesFasta')
+
 
 seq2subfam_filename = directory+'/orf2subfamily.tsv'
 output = open(seq2subfam_filename,'w')        
@@ -103,20 +121,11 @@ for cluster,subfam in cluster2subfam.items() :
     for sequence in cluster2sequences[ cluster ] :
         output.write(sequence+'\t'+subfamName+'\n')
 
+    fasta_output_filename = directory+'/'+'subfamiliesFasta'+'/'+str(subfamName)+'.fa'
+    SeqIO.write(cluster2seqList[cluster],fasta_output_filename,'fasta')
+
+        
 output.close()
 
 
 
-# creating a config filename to perform hhblits
-
-# output = open(config_filename,'w')
-# liste = list()
-# output.write('{'+'\n')
-# output.write('\t\"clusters\":{\n')
-# for (path, dirs, files) in os.walk(output_directory+'/'+'fasta'):
-#     for filename in files :
-#         liste.append('\t\t\"'+filename.replace('.fa','\"')+':\"'+path+'/'+filename+'\"')
-# output.write(',\n'.join(liste)+'\n')
-# output.write('\t'+'}'+'\n')
-# output.write('}'+'\n')
-# output.close()
