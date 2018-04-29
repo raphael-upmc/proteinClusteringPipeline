@@ -61,7 +61,7 @@ rule makehhblitsdb :
 		"{directory}/hhblits/db_cs219.ffindex",
 		touch("{directory}/hhblits/db")
 	run:
-		shell("/home/meheurap/snakemake/proteinCluster/makehhblitsdb.py {output}")
+		shell("/home/meheurap/proteinClusteringPipeline/script/makehhblitsdb.py {output}")
 
 rule runhhblits:
 	input:
@@ -78,4 +78,4 @@ rule parsehhblitsresults:
 	output:
 		"{directory}/hhblits/allvsall.hhr"
 	run:
-		shell("/home/meheurap/snakemake/proteinCluster/parsingHhblitsResults.py {output}")
+		shell("/home/meheurap/proteinClusteringPipeline/script/parsingHhblitsResults.py {output}")
