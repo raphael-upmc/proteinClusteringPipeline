@@ -29,7 +29,7 @@ rule reformat_a3m:
 	output:
 		"{directory}/hhblits/mafft/{clusterId}_renamed.a3m"     
 	run:
-     		shell("/home/meheurap/proteinClusteringPipeline/script/addingNameToA3m.py {input} {output}")
+     		shell("/home/meheurap/proteinClusteringPipeline/scripts/addingNameToA3m.py {input} {output}")
 
 
 rule add_ss:
@@ -61,7 +61,7 @@ rule makehhblitsdb :
 		"{directory}/hhblits/db_cs219.ffindex",
 		touch("{directory}/hhblits/db")
 	run:
-		shell("/home/meheurap/proteinClusteringPipeline/script/makehhblitsdb.py {output}")
+		shell("/home/meheurap/proteinClusteringPipeline/scripts/makehhblitsdb.py {output}")
 
 rule runhhblits:
 	input:
@@ -78,4 +78,4 @@ rule parsehhblitsresults:
 	output:
 		"{directory}/hhblits/allvsall.hhr"
 	run:
-		shell("/home/meheurap/proteinClusteringPipeline/script/parsingHhblitsResults.py {output}")
+		shell("/home/meheurap/proteinClusteringPipeline/scripts/parsingHhblitsResults.py {output}")

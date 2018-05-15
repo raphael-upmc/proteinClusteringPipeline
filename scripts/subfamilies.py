@@ -5,26 +5,43 @@ import os,sys,re
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+import argparse
 
-
-fasta_filename = sys.argv[1]
-directory = sys.argv[2]
 
 cwd = os.path.abspath(os.getcwd())
 
-if not os.path.exists(fasta_filename) :
-    sys.exit(fasta_filename+' does not exist, exit')
-fasta_filename = os.path.abspath(fasta_filename)
-print(fasta_filename)
+parser = argparse.ArgumentParser(description='Run protein sequences clustering')
+parser.add_argument('fasta_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
+parser.add_argument('--output-directory',help='the output directory where the results will be store (default: ./FASTA_FILENAME_proteinClutering)')
+parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
+
+args = parser.parse_args()
+print(args)
+# print(args.output_directory)
+# print(args.fasta_filename)
 
 
-# checking directory #
+# checking arguments
+if not os.path.exists(args.fasta_filename) :
+    sys.exit(args.fasta_filename+' does not exist, exit')
+else:
+    fasta_filename = os.path.abspath(args.fasta_filename)
+
+
+if args.output_directory == None :
+    directory = cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering'
+else:    
+    directory = args.output_directory
+
+
+    
+# cchecking and reating the output directory
 if not os.path.exists(directory) :
     try :
         directory = os.path.realpath(directory)
         os.mkdir(directory)                
     except:
-        print(directory+' can not be created, creating the outputs in: '+cwd+'/'+os.path.basename(fasta_filename)+'_subfamilies')        
+        print(directory+' can not be created, creating the output in: '+cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering')        
         directory = cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering'
         if not os.path.exists(directory) :
             os.mkdir(directory)
@@ -33,7 +50,13 @@ if not os.path.exists(directory) :
 else:
     sys.exit(os.path.realpath(directory)+' already exists, remove it first! exit')
 
-print(directory)    
+
+print()
+print('fata_filename: '+fasta_filename)    
+print('output directory: '+directory)
+print()
+
+
 
 mmseqs_directory = directory+'/mmseqs'
 os.mkdir(directory+'/mmseqs')
@@ -42,7 +65,7 @@ os.mkdir(directory+'/mmseqs')
 
 db_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB'
 
-mmseqs_db_cmd = 'mmseqs createdb '+fasta_filename+' '+db_filename
+mmseqs_db_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createdb '+fasta_filename+' '+db_filename
 print(mmseqs_db_cmd)
 status = os.system(mmseqs_db_cmd)
 
@@ -54,12 +77,12 @@ else :
 
 
 cluster_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu'
-mmseqs_cluster_cmd = 'mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads 1 -s 6 -c 0.7 --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'
+mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c 0.5 --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'
 print(mmseqs_cluster_cmd)
 os.system(mmseqs_cluster_cmd)
 
 tsv_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu.tsv'
-mmseqs_createtsv_cmd = 'mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename
+mmseqs_createtsv_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename
 print(mmseqs_createtsv_cmd)
 os.system(mmseqs_createtsv_cmd)
 
@@ -82,6 +105,7 @@ file.close()
 
 
 # renaming cluster name by subfamXXX
+clusteredSeq = 0
 cluster2subfam = dict()
 subfam = 0
 for cluster,sequenceList in cluster2sequences.items() :
@@ -90,10 +114,10 @@ for cluster,sequenceList in cluster2sequences.items() :
     else :
         subfam += 1
         cluster2subfam[cluster] = subfam
-
+        clusteredSeq += len(sequenceList)
 l = len(str(subfam))
 
-print('the '+str(len(sequence2cluster))+' orfs were clustered in '+str(subfam)+' subfams')
+print('on the '+str(len(sequence2cluster))+' orfs, '+str(clusteredSeq)+' were clustered into '+str(subfam)+' subfams')
 
 
 
