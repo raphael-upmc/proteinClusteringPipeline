@@ -6,6 +6,7 @@ from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import argparse
+import logging
 
 
 cwd = os.path.abspath(os.getcwd())
@@ -16,9 +17,6 @@ parser.add_argument('--output-directory',help='the output directory where the re
 parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
 
 args = parser.parse_args()
-print(args)
-# print(args.output_directory)
-# print(args.fasta_filename)
 
 
 # checking arguments
@@ -35,13 +33,13 @@ else:
 
 
     
-# cchecking and reating the output directory
+# checking and creating the output directory
 if not os.path.exists(directory) :
     try :
         directory = os.path.realpath(directory)
         os.mkdir(directory)                
     except:
-        print(directory+' can not be created, creating the output in: '+cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering')        
+        print(directory+' cannot be created, creating the output in: '+cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering')        
         directory = cwd+'/'+os.path.basename(fasta_filename)+'_proteinClustering'
         if not os.path.exists(directory) :
             os.mkdir(directory)
@@ -51,40 +49,52 @@ else:
     sys.exit(os.path.realpath(directory)+' already exists, remove it first! exit')
 
 
-print()
-print('fata_filename: '+fasta_filename)    
-print('output directory: '+directory)
-print()
+# add filemode="w" to overwrite
+logging_filename = directory+'/'+'subfamilies.log'
+logging.basicConfig(filename=logging_filename, level=logging.INFO,filemode="w")
+
+
+logging.info(' '.join(sys.argv))
+logging.info('fasta_filename: '+fasta_filename)    
+logging.info('output directory: '+directory)
+logging.info('cpu: '+str(args.cpu)+'\n')
+
 
 
 
 mmseqs_directory = directory+'/mmseqs'
 os.mkdir(directory+'/mmseqs')
-
+logging.info('creating '+mmseqs_directory)
 
 
 db_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB'
-
-mmseqs_db_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createdb '+fasta_filename+' '+db_filename
-print(mmseqs_db_cmd)
+log_filename = directory+'/'+'mmseqs_createdb.log'
+mmseqs_db_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createdb '+fasta_filename+' '+db_filename+' >'+log_filename
+logging.info(mmseqs_db_cmd)
 status = os.system(mmseqs_db_cmd)
 
+
 tmp_directory = mmseqs_directory+'/tmp'
+logging.info('creating '+tmp_directory)
 if os.path.exists(db_filename) :
     os.mkdir(tmp_directory)
 else :
+    logging.error(logging.info("Informational message"))                
     sys.exit(db_filename+' is absent! exit')
 
 
 cluster_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu'
-mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c 0.5 --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'
-print(mmseqs_cluster_cmd)
-os.system(mmseqs_cluster_cmd)
+log_filename = directory+'/'+'mmseqs_cluster.log'
+mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c 0.5 --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'+' >'+log_filename
+logging.info(mmseqs_cluster_cmd)
+status = os.system(mmseqs_cluster_cmd)
+
 
 tsv_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu.tsv'
-mmseqs_createtsv_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename
-print(mmseqs_createtsv_cmd)
-os.system(mmseqs_createtsv_cmd)
+log_filename = directory+'/'+'mmseqs_createtsv.log'
+mmseqs_createtsv_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename+' >'+log_filename
+logging.info(mmseqs_createtsv_cmd)
+status = os.system(mmseqs_createtsv_cmd)
 
 
 
@@ -92,7 +102,7 @@ os.system(mmseqs_createtsv_cmd)
 ### writting the final output ###
 #################################
 
-
+logging.info('reading the output...')
 cluster2sequences = defaultdict(set)
 sequence2cluster = dict()
 file = open(tsv_filename,'r')
@@ -117,7 +127,7 @@ for cluster,sequenceList in cluster2sequences.items() :
         clusteredSeq += len(sequenceList)
 l = len(str(subfam))
 
-print('on the '+str(len(sequence2cluster))+' orfs, '+str(clusteredSeq)+' were clustered into '+str(subfam)+' subfams')
+logging.info('On the '+str(len(sequence2cluster))+' protein sequences, '+str(clusteredSeq)+' were clustered into '+str(subfam)+' subfams')
 
 
 
@@ -130,9 +140,9 @@ for record in SeqIO.parse(fasta_filename,'fasta') :
         continue
 
 os.mkdir(directory+'/'+'subfamiliesFasta')
-
-
+logging.info('creating one fasta file per subfams in '+directory+'/'+'subfamiliesFasta')
 seq2subfam_filename = directory+'/orf2subfamily.tsv'
+logging.info('creating tsv file '+seq2subfam_filename)
 output = open(seq2subfam_filename,'w')        
 output.write('orf\tsubfamily\n')
 for cluster,subfam in cluster2subfam.items() :
@@ -147,13 +157,13 @@ for cluster,subfam in cluster2subfam.items() :
 
     fasta_output_filename = directory+'/'+'subfamiliesFasta'+'/'+str(subfamName)+'.fa'
     SeqIO.write(cluster2seqList[cluster],fasta_output_filename,'fasta')
-
         
 output.close()
 
 
 config_filename = directory+'/config.json'
 output = open(config_filename,'w')
+logging.info('creating the config file for HMM-HMM comparison '+config_filename)
 
 liste = list()
 output.write('{'+'\n')
