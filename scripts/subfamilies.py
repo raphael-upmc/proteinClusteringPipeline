@@ -149,6 +149,7 @@ if __name__ == "__main__":
     logging.info('creating one fasta file per subfamily in '+directory+'/'+'subfamiliesFasta')
     os.mkdir(directory+'/'+'subfamiliesFasta')
 
+    subfam2nb = defaultdict(int)
     seq2subfam_filename = directory+'/orf2subfamily.tsv'
     logging.info('creating tsv file '+seq2subfam_filename)
     output = open(seq2subfam_filename,'w')        
@@ -162,7 +163,8 @@ if __name__ == "__main__":
     
         for sequence in cluster2sequences[ cluster ] :
             output.write(sequence+'\t'+subfamName+'\n')
-
+            subfam2nb[ subfamName ] += 1
+            
         fasta_output_filename = directory+'/'+'subfamiliesFasta'+'/'+str(subfamName)+'.fa'
         SeqIO.write(cluster2seqList[cluster],fasta_output_filename,'fasta')
         
@@ -179,7 +181,8 @@ if __name__ == "__main__":
     output.write('\t\"clusters\":{\n')
     for (path, dirs, files) in os.walk(directory+'/'+'subfamiliesFasta') :
         for filename in files :
-            liste.append('\t\t\"'+filename.replace('.fa','\"')+':\"'+path+'/'+filename+'\"')
+#            liste.append('\t\t\"'+filename.replace('.fa','\"')+':\"'+path+'/'+filename+'\"')
+            liste.append('\t\t\"'+filename.replace('.fa','\"')+':\"'+str(subfam2nb[ filename.replace('.fa','') ])+'\"')
     output.write(',\n'.join(liste)+'\n')
     output.write('\t'+'}'+'\n')
     output.write('}'+'\n')

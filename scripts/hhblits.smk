@@ -1,3 +1,5 @@
+import sys,os,re
+
 directory = config["directory"] 
 
 rule all:
@@ -5,7 +7,6 @@ rule all:
 		expand("{directory}/hhblits/hhm/{clusterId}.hhm",clusterId=config["clusters"],directory=config["directory"]),
 		expand("{directory}/hhblits/hhr/{clusterId}.hhr",clusterId=config["clusters"],directory=config["directory"]),		
 		expand("{directory}/hhblits/db",directory=config["directory"]),
-		expand("{directory}/hhblits/allvsall.hhr",directory=config["directory"])		
 
 rule mafft:
 	input:
@@ -13,15 +14,24 @@ rule mafft:
 	output:
 		"{directory}/hhblits/mafft/{clusterId}.mafft"
 	run:
-		shell("mafft --auto {input} > {output}")
+		shell("mafft --auto {input} > {output} 2>/dev/null")
 
-rule a3m:
+
+rule hhfilter:
 	input:
 		"{directory}/hhblits/mafft/{clusterId}.mafft"
 	output:
 		"{directory}/hhblits/mafft/{clusterId}.a3m"
 	run:
-     		shell("reformat.pl fas a3m {input} {output} -M 50")
+		print(config["clusters"])
+		print(wildcards.clusterId)
+		print(config["clusters"][wildcards.clusterId])		
+		if int(config["clusters"][wildcards.clusterId]) > 100 :
+		   shell("hhfilter -M 50 -diff 100 -i {input} -o {output}")
+		   shell("reformat.pl a3m a3m {output} {output} -M 50 -r;")
+		else:
+		   shell("reformat.pl fas a3m {input} {output} -M 50 -r;")
+		   		 		  
 
 rule reformat_a3m:
 	input:
@@ -46,7 +56,7 @@ rule hhm:
 	output:
 		"{directory}/hhblits/hhm/{clusterId}.hhm"
 	run:		
-		shell("hhmake -i {input} -o {output}")
+		shell("hhmake -add_cons -M 50 -i {input} -o {output}")
 
 rule makehhblitsdb :
 	input:
@@ -72,10 +82,3 @@ rule runhhblits:
 	run:
 		shell("hhblits -i {input.hhm} -o {output} -d {input.db}  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1")
 
-rule parsehhblitsresults:
-	input:
-		expand("{directory}/hhblits/hhr/{clusterId}.hhr",clusterId=config["clusters"],directory=config["directory"])
-	output:
-		"{directory}/hhblits/allvsall.hhr"
-	run:
-		shell("/home/meheurap/proteinClusteringPipeline/scripts/parsingHhblitsResults.py {output}")
