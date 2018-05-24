@@ -14,7 +14,7 @@ rule mafft:
 	output:
 		"{directory}/hhblits/mafft/{clusterId}.mafft"
 	run:
-		shell("mafft --auto {input} > {output} 2>/dev/null")
+		shell("/home/meheurap/programs/mafft-7.390-without-extensions/bin/mafft --auto {input} > {output} 2>/dev/null")
 
 
 rule hhfilter:
@@ -27,10 +27,10 @@ rule hhfilter:
 		print(wildcards.clusterId)
 		print(config["clusters"][wildcards.clusterId])		
 		if int(config["clusters"][wildcards.clusterId]) > 100 :
-		   shell("hhfilter -M 50 -diff 100 -i {input} -o {output}")
-		   shell("reformat.pl a3m a3m {output} {output} -M 50 -r;")
+		   shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhfilter -M 50 -diff 100 -i {input} -o {output}")
+		   shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m {output} {output} -M 50 -r;")
 		else:
-		   shell("reformat.pl fas a3m {input} {output} -M 50 -r;")
+		   shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl fas a3m {input} {output} -M 50 -r;")
 		   		 		  
 
 rule reformat_a3m:
@@ -48,7 +48,7 @@ rule add_ss:
 	output:
 		"{directory}/hhblits/a3m/{clusterId}.a3m"
 	run:
-     		shell("addss.pl {input} {output} -a3m")
+     		shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl {input} {output} -a3m")
 
 rule hhm:
 	input:
@@ -56,7 +56,7 @@ rule hhm:
 	output:
 		"{directory}/hhblits/hhm/{clusterId}.hhm"
 	run:		
-		shell("hhmake -add_cons -M 50 -i {input} -o {output}")
+		shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -i {input} -o {output}")
 
 rule makehhblitsdb :
 	input:
@@ -80,5 +80,5 @@ rule runhhblits:
 	output:
 		"{directory}/hhblits/hhr/{clusterId}.hhr"
 	run:
-		shell("hhblits -i {input.hhm} -o {output} -d {input.db}  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1")
+		shell("/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i {input.hhm} -o {output} -d {input.db}  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1")
 
