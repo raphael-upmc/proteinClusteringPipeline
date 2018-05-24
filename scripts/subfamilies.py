@@ -8,7 +8,7 @@ from Bio.SeqRecord import SeqRecord
 import argparse
 import logging
 from datetime import date, time, datetime
-
+import shutil
 
 if __name__ == "__main__":
     t1 = datetime.now()
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
 
     config_filename = directory+'/config.json'
-    logging.info('creating the config file for HMM-HMM comparison '+config_filename+'\n')
+    logging.info('creating the config file for HMM-HMM comparison '+config_filename)
     output = open(config_filename,'w')
     liste = list()
     output.write('{'+'\n')
@@ -191,6 +191,9 @@ if __name__ == "__main__":
     t2 = datetime.now()
     t3 = t2 - t1
 
+    logging.info("removing the tmp directory "+tmp_directory+'\n')
+    shutil.rmtree(tmp_directory, ignore_errors=True)
+    
     logging.info("done in "+str(t3.seconds)+" sec. ("+str(t3.seconds/3600)+" hours)")
     logging.info('datetime end: '+str(t2))
     sys.exit()
