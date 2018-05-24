@@ -4,9 +4,9 @@ directory = config["directory"]
 
 rule all:
 	input:
-		expand("{directory}/hhblits/hhm/{clusterId}.hhm",clusterId=config["clusters"],directory=config["directory"]),
-		expand("{directory}/hhblits/hhr/{clusterId}.hhr",clusterId=config["clusters"],directory=config["directory"]),		
-		expand("{directory}/hhblits/db",directory=config["directory"]),
+#		expand("{directory}/hhblits/hhm/{clusterId}.hhm",clusterId=config["clusters"],directory=config["directory"]),
+		expand("{directory}/hhblits/hhr/{clusterId}.hhr",clusterId=config["clusters"],directory=config["directory"]),
+#		expand("{directory}/hhblits/db",directory=config["directory"]),
 
 rule mafft:
 	input:
