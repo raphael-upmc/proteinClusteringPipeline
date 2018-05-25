@@ -9,10 +9,10 @@ def checkingFasta(fasta_filename) :
     seqIdSet = set()
     badSequenceList = list()
     duplicatedSeqIdSet = set()
-    
+    cpt = 0
     noFunkyCharacter = r'^[\w]+\*{0,1}$'
     for record in SeqIO.parse(fasta_filename,'fasta') :
-
+        cpt += 1
         # duplicated seqId
         if record.id in seqIdSet :
             duplicatedSeqIdSet.add(record.id)
@@ -25,15 +25,18 @@ def checkingFasta(fasta_filename) :
             continue
         else:
             badSequenceList.append(record.id)
-    return badSequenceList,duplicatedSeqIdSet
+    return badSequenceList,duplicatedSeqIdSet,cpt
 
 
 def writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,output_filename):
 
     output = open(output_filename,'w')
-
+    cpt = 0
     seqSet = set()
     for record in SeqIO.parse(fasta_filename,'fasta') :
+        if cpt % 1000000 == 0:
+            print(cpt)
+
         if record.id in set(badSequenceList) :
             continue
 
@@ -43,10 +46,11 @@ def writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,output
             else:
                 seqSet.add(seqSet)
                 SeqIO.write(record,output,'fasta') # write only one of the duplicated sequence
+                cpt += 1
                 continue
-        
+        cpt += 1
         SeqIO.write(record,output,'fasta')
-        
+    return cpt    
         
 if __name__ == "__main__":
 
@@ -65,21 +69,31 @@ if __name__ == "__main__":
     else:
         fasta_filename = os.path.abspath(args.fasta_filename)
 
+    if args.cleaned_fasta_filename != None :
+        if os.path.exists(args.cleaned_fasta_filename) :
+            sys.exit(args.cleaned_fasta_filename+' already exists, remove it first, exit')
+
+    
 
     # looking for funky characters and duplicated seqId in the fasta file
     print('reading the fasta file, looking for errors')
-    badSequenceList,duplicatedSeqIdSet = checkingFasta(fasta_filename)
+    badSequenceList,duplicatedSeqIdSet,cpt = checkingFasta(fasta_filename)
     print('done')
+    
     if len(badSequenceList) > 0 or len(duplicatedSeqIdSet) > 0 :
+        print(str(cpt)+' fasta sequences')
         print('Sequences with funky characters: '+str(len(badSequenceList)))
         print('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet))+'\n')
         if args.cleaned_fasta_filename != None :
-            writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,os.path.abspath(args.cleaned_fasta_filename))
             print('Creation of a cleaned fasta file: '+os.path.abspath(args.cleaned_fasta_filename))
+            cpt = writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,os.path.abspath(args.cleaned_fasta_filename))
+            print(str(cpt)+' fasta sequences')
+            print('done')
             sys.exit()
         else:
             sys.exit()
     else:
+        print(str(cpt)+' fasta sequences')
         print('Sequences with funky characters: '+str(len(badSequenceList)))
         print('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet))+'\n')        
         print('Fasta file looks okay: '+fasta_filename)
