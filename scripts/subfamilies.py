@@ -10,6 +10,29 @@ import logging
 from datetime import date, time, datetime
 import shutil
 
+def checkingFasta(fasta_filename) :
+    seqIdSet = set()
+    badSequenceList = list()
+    duplicatedSeqIdSet = set()
+    
+    noFunkyCharacter = r'^[\w]+\*{0,1}$'
+    for record in SeqIO.parse(fasta_filename,'fasta') :
+
+        # duplicated seqId
+        if record.id in seqIdSet :
+            duplicatedSeqIdSet.add(record.id)
+            seqIdSet.add(record.id)
+        else:
+            seqIdSet.add(record.id)
+
+        # funky characters in the aa sequence
+        if re.search(noFunkyCharacter,str(record.seq)) :
+            continue
+        else:
+            badSequenceList.append(record)
+    return badSequenceList,duplicatedSeqIdSet
+
+
 if __name__ == "__main__":
     t1 = datetime.now()
     cwd = os.path.abspath(os.getcwd())
@@ -67,6 +90,17 @@ if __name__ == "__main__":
     logging.info('cpu: '+str(args.cpu)+'\n')
 
 
+    # looking for funky characters and duplicated seqId in the fasta file
+    logging.info('Checking the fasta file. looking for funky characters and duplicated seqId')
+    badSequenceList,duplicatedSeqIdSet = checkingFasta(fasta_filename)
+    if len(badSequenceList) > 0 or len(duplicatedSeqIdSet) > 0 :
+        logging.info('Sequences with funky characters or stop codons within the sequences: '+str(len(badSequenceList)))
+        logging.info('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet)))        
+        logging.error(fasta_filename+' contains funky characters and/or duplicated seqId! please clean the file! exit')
+        sys.exit(fasta_filename+' contains funky characters and/or duplicated seqId! please clean the file! exit')
+    else:
+        logging.info('Sequences with funky characters: '+str(len(badSequenceList)))
+        logging.info('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet))+'\n')        
 
 
     mmseqs_directory = directory+'/mmseqs'
