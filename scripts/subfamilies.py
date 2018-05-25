@@ -41,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('fasta_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
     parser.add_argument('--output-directory',help='the output directory where the results will be store (default: ./FASTA_FILENAME_proteinClutering)')
     parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
+    parser.add_argument('--min-size',type=int,default=2,help='minimal size of the protein families to retain (default: 2)')
 
     args = parser.parse_args()
 
@@ -87,7 +88,8 @@ if __name__ == "__main__":
     logging.info("command line: "+' '.join(sys.argv))
     logging.info('fasta_filename: '+fasta_filename)    
     logging.info('output directory: '+directory)
-    logging.info('cpu: '+str(args.cpu)+'\n')
+    logging.info('cpu: '+str(args.cpu))
+    logging.info('min-size-families: '+str(args.min_size)+'\n')
 
 
     # looking for funky characters and duplicated seqId in the fasta file
@@ -160,7 +162,7 @@ if __name__ == "__main__":
     cluster2subfam = dict()
     subfam = 0
     for cluster,sequenceList in cluster2sequences.items() :
-        if len(sequenceList) == 1 : # removing orphans
+        if len(sequenceList) < args.min_size : # removing orphans
             continue
         else :
             subfam += 1
