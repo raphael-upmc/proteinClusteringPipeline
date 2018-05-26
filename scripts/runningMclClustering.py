@@ -9,7 +9,7 @@ import shutil
 import json
 
 
-def readingHhrFile(hhr_filename) :
+def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
     result = list()
     tag = 0
     file = open(hhr_filename,'r')
@@ -31,7 +31,7 @@ def readingHhrFile(hhr_filename) :
             liste = line.split()
 
             target = liste[1]
-            prob = liste[2]
+            probs = float(liste[2])
             qcoord = liste[8]
             qstart = float(qcoord.split('-')[0])
             qend = float(qcoord.split('-')[1])            
@@ -42,8 +42,14 @@ def readingHhrFile(hhr_filename) :
             send = float(liste[9].split('-')[1])            
             slen = float(liste[10].replace('(','').replace(')',''))
             scover = ( send - sstart + 1 ) / slen
-            result.append(query+'\t'+target+'\t'+prob+'\t'+str(qcover)+'\t'+str(scover))
-            print(query+'\t'+target+'\t'+prob+'\t'+str(qcover)+'\t'+str(scover))
+
+            if probs > probs_threshold and ( scover > coverage_threshold and qcover > coverage_threshold ) :
+
+                if query < target :
+                    result.append([query,target,probs,qcover,scover])
+                else:
+                    result.append([target,query,probs,qcover,scover])
+                    #            print(query+'\t'+target+'\t'+str(probs)+'\t'+str(qcover)+'\t'+str(scover))
     file.close()
     return result
 
@@ -74,8 +80,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Run protein sequences clustering')
     parser.add_argument('config_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
-    parser.add_argument('--coverage',type=int,default=0.75,help='number of CPUs used by mmseqs (default: 1)')
-    parser.add_argument('--probs',type=int,default=0.95,help='minimal size of the protein families to retain (default: 2)')
+    parser.add_argument('--coverage',type=float,default=0.75,help='number of CPUs used by mmseqs (default: 1)')
+    parser.add_argument('--probs',type=float,default=0.95,help='minimal size of the protein families to retain (default: 2)')
 
     args = parser.parse_args()
 
@@ -113,11 +119,14 @@ if __name__ == "__main__":
         sys.exit(hhr_dir+' does not look okay')
 
     # collecting the results in each hhr file
+    hhrHitsList = list()
     for root, dirs, files in os.walk(hhr_dir):
         for filename in files :
             hhr_filename = root+'/'+filename
-            result = readingHhrFile(hhr_filename)
-    
+            hhrHitsList.extend( readingHhrFile(hhr_filename,args.coverage,args.probs) )
+
+    for hit in hhrHitsList :
+        print(hit)
 # output_filename = sys.argv[1]
 
 # output_directory = sys.argv[1].rsplit('/',1)[0]
