@@ -10,6 +10,7 @@ import json
 
 
 def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
+#    print(hhr_filename)
     result = list()
     tag = 0
     file = open(hhr_filename,'r')
@@ -29,27 +30,39 @@ def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
         
         if tag == 1 and line != '':
             liste = line.split()
-
-            target = liste[1]
-            probs = float(liste[2])
-            qcoord = liste[8]
-            qstart = float(qcoord.split('-')[0])
-            qend = float(qcoord.split('-')[1])            
-            qcover = ( qend - qstart + 1.0 ) / qlen
-            
-            scoord = liste[9]
-            sstart = float(liste[9].split('-')[0])
-            send = float(liste[9].split('-')[1])            
-            slen = float(liste[10].replace('(','').replace(')',''))
-            scover = ( send - sstart + 1 ) / slen
-
+            if len(liste) == 11 :
+                target = liste[1]
+                probs = float(liste[2])
+                qcoord = liste[8]
+                qstart = float(qcoord.split('-')[0])
+                qend = float(qcoord.split('-')[1])            
+                qcover = ( qend - qstart + 1.0 ) / qlen            
+                scoord = liste[9]
+                sstart = float(liste[9].split('-')[0])
+                send = float(liste[9].split('-')[1])            
+                slen = float(liste[10].replace('(','').replace(')',''))
+                scover = ( send - sstart + 1 ) / slen
+            elif len(liste) == 10: # special case when liste[9] = 120-198(200)
+                target = liste[1]
+                probs = float(liste[2])
+                qcoord = liste[8]
+                qstart = float(qcoord.split('-')[0])
+                qend = float(qcoord.split('-')[1])            
+                qcover = ( qend - qstart + 1.0 ) / qlen            
+                scoord,slen = liste[9].split('(')
+                sstart = float(scoord.split('-')[0])
+                send = float(scoord.split('-')[1])            
+                slen = float(slen.replace('(','').replace(')',''))
+                scover = ( send - sstart + 1 ) / slen
+            else:
+                sys.exit('error')
+                continue
             if probs > probs_threshold and ( scover > coverage_threshold and qcover > coverage_threshold ) :
-
-                if query < target :
-                    result.append([query,target,probs,qcover,scover])
-                else:
-                    result.append([target,query,probs,qcover,scover])
-                    #            print(query+'\t'+target+'\t'+str(probs)+'\t'+str(qcover)+'\t'+str(scover))
+                # if query < target :
+                #     result.append([query,target,probs,qcover,scover])
+                # else:
+                #     result.append([target,query,probs,qcover,scover])
+                result.append([query,target,probs,qcover,scover])
     file.close()
     return result
 
@@ -76,10 +89,10 @@ def checkingDirectory(directory,cluster2nb):
 
 if __name__ == "__main__":
     t1 = datetime.now()
-    cwd = os.path.abspath(os.getcwd())
     
     parser = argparse.ArgumentParser(description='Run protein sequences clustering')
     parser.add_argument('config_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
+#    parser.add_argument('output_filename', help='the path of the OUTPUT_FILENAME that contains the result of the MCL clustering')
     parser.add_argument('--coverage',type=float,default=0.75,help='number of CPUs used by mmseqs (default: 1)')
     parser.add_argument('--probs',type=float,default=0.95,help='minimal size of the protein families to retain (default: 2)')
 
@@ -125,20 +138,15 @@ if __name__ == "__main__":
             hhr_filename = root+'/'+filename
             hhrHitsList.extend( readingHhrFile(hhr_filename,args.coverage,args.probs) )
 
+    output_network_filename = cwd+'/'+'hhblits'+'/'+'hhr.network'
+    output = open(output_network_filename,'w')
     for hit in hhrHitsList :
-        print(hit)
-# output_filename = sys.argv[1]
+        output.write('\t'.join(str(elt) for elt in hit[0:3])+'\n')
+    output.close()
 
-# output_directory = sys.argv[1].rsplit('/',1)[0]
 
-# output = open(output_filename,'w')
-# output.write('query'+'\t'+'subject'+'\t'+'prob'+'\t'+'qcover'+'\t'+'scover'+'\n')
-
-# for (path, dirs, files) in os.walk(output_directory+'/'+'hhr'):
-#     for filename in files :
-#         hhr_filename = path+'/'+filename
-#         print(filename)
-#         for line in readingOutput(hhr_filename):
-#             output.write(line+'\n')
-            
-# output.close()
+    # running mcl
+    output_mcl_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.mcl'
+    cmd = "mcl "+output_network_filename+" --abc -I 2.0 -o "+output_mcl_filename
+    print(cmd)
+    status = os.system(cmd)
