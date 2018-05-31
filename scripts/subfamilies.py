@@ -139,6 +139,13 @@ if __name__ == "__main__":
     logging.info('running '+mmseqs_createtsv_cmd)
     status = os.system(mmseqs_createtsv_cmd)
 
+    msa_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu_msa'
+    log_filename = directory+'/logs/'+'mmseqs_results2msa.log'
+    mmseqs_result2msa_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs result2msa '+db_filename+' '+db_filename+' '+cluster_filename+' '+msa_filename+' --diff 100 --threads '+str(args.cpu)+' >'+log_filename
+    logging.info('running '+mmseqs_result2msa_cmd)
+    status = os.system(mmseqs_result2msa_cmd)
+
+    
 
 
     #################################
@@ -214,6 +221,7 @@ if __name__ == "__main__":
     liste = list()
     output.write('{'+'\n')
     output.write('\t\"directory\":\"'+directory+'\",\n')
+    output.write('\t\"msa_filename\":\"'+msa_filename+'\",\n')
     output.write('\t\"clusters\":{\n')
     for (path, dirs, files) in os.walk(directory+'/'+'subfamiliesFasta') :
         for filename in files :
