@@ -121,77 +121,79 @@ def checkMSA(fasta_filename,seqId2seq,nb) :
     else:
         return False
 
+if __name__ == "__main__":
     
-config_filename = sys.argv[1]
-if not os.path.exists(config_filename) :
-    sys.exit(config_filename+' does not exist, exit')
+    config_filename = sys.argv[1]
+    if not os.path.exists(config_filename) :
+        sys.exit(config_filename+' does not exist, exit')
     
-with open(config_filename) as f:
-    data = json.load(f)
+    with open(config_filename) as f:
+        data = json.load(f)
 
 
-subfamily2nb = data['clusters']
-msa_filename = data['msa_filename']
-cwd = data['directory']
+    subfamily2nb = data['clusters']
+    msa_filename = data['msa_filename']
+    cwd = data['directory']
+
+    subfam_directory = cwd+'/'+'subfamiliesFasta'
+    subfam_directory = os.path.abspath(subfam_directory)
+
+    tsv_filename = os.path.abspath(cwd+'/'+'orf2subfamily.tsv')
+    orf2subfamily = orf2familyFunction(tsv_filename)
+
+    subfamily2seqList = readingMsa(msa_filename,orf2subfamily)
 
 
+    ##########################
+    # creating the directory #
+    ##########################
 
-subfam_directory = cwd+'/'+'subfamiliesFasta'
-subfam_directory = os.path.abspath(subfam_directory)
-
-
-tsv_filename = os.path.abspath(cwd+'/'+'orf2subfamily.tsv')
-orf2subfamily = orf2familyFunction(tsv_filename)
-
-subfamily2seqList = readingMsa(msa_filename,orf2subfamily)
-
-
-
-
-##########################
-# creating the directory #
-##########################
-
-hhblits_directory = os.path.abspath(cwd+'/'+'hhblits')
-a3m_directory = os.path.abspath(hhblits_directory+'/'+'a3m')
-hhm_directory = os.path.abspath(hhblits_directory+'/'+'hhm')
-
-if os.path.exists(hhblits_directory) :
-    sys.exit(hhblits_directory+' already exists, remove it')
-else:
-    os.makedirs(hhm_directory)
-    os.makedirs(a3m_directory)    
+    hhblits_directory = os.path.abspath(cwd+'/'+'hhblits')
+    a3m_directory = os.path.abspath(hhblits_directory+'/'+'a3m')
+    hhm_directory = os.path.abspath(hhblits_directory+'/'+'hhm')
+    
+    if os.path.exists(hhblits_directory) :
+        sys.exit(hhblits_directory+' already exists, remove it')
+    else:
+        os.makedirs(hhm_directory)
+        os.makedirs(a3m_directory)    
 
 
-###################################################
-# checking msa file and creating individual files #
-###################################################
+    ###################################################
+    # checking msa file and creating individual files #
+    ###################################################
 
-for root, dirs, files in os.walk(subfam_directory):
-    for filename in files :
-        subfamily = filename.split('.')[0]
+    for root, dirs, files in os.walk(subfam_directory):
+        for filename in files :
+            subfamily = filename.split('.')[0]
 
-        fasta_filename = root+'/'+filename
-        nb = int(subfamily2nb[ subfamily ])
-        if not checkMSA(fasta_filename,subfamily2seqList[ subfamily ],nb) :
-            print(subfamily+' ==> ERROR')
-        else:
-            print(subfamily+' ==> okay')
+            fasta_filename = root+'/'+filename
+            nb = int(subfamily2nb[ subfamily ])
+            if not checkMSA(fasta_filename,subfamily2seqList[ subfamily ],nb) :
+                print(subfamily+' ==> ERROR')
+            else:
+                print(subfamily+' ==> okay')
 
+            a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
+            creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
+
+
+    #################################
+    # creating the hhblits database #
+    #################################
+
+    # to parallelize
+    
+    for subfamily,nb in subfamily2nb.items() :
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-        creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
+        cpt = creatingFiles4HhblitsDb(a3m_filename,hhm_directory)
+        print( subfamily+'\t'+str(nb)+'\t'+str(cpt) )
 
 
-#################################
-# creating the hhblits database #
-#################################
-
-for subfamily,nb in subfamily2nb.items() :
-    a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-    cpt = creatingFiles4HhblitsDb(a3m_filename,hhm_directory)
-    print( subfamily+'\t'+str(nb)+'\t'+str(cpt) )
-
-# to parallelize
+    if creatingHhblitsDb(hhblits_directory) :
+        print('hhblits database created!')
+    else:
+        print('something went wrong during the hhblits database creation!')
 
 
-# running hhblits
+    # running hhblits
