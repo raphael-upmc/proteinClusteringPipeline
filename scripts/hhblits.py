@@ -8,20 +8,19 @@ from collections import defaultdict
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-def creatingFiles4HhblitsDb(msa_filename,a3m_directory,hhm_directory) :
-    basename = os.path.basename(msa_filename).splut('.')[0]
+def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
+    basename = os.path.basename(a3m_filename).split('.')[0]
 
     cpt = 0
     
     # reformat.pl
-    a3m_filename = a3m_directory+'/'+basename+'.a3m'
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+msa_filename+' '+a3m_filename+' -M 50 -r')
+    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r'
     status = os.system(cmd)
     if status :
         cpt += 1
 
     # addss.pl
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m'
+    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m'
     status = os.system(cmd)
     if status :
         cpt += 1
@@ -154,16 +153,14 @@ subfamily2seqList = readingMsa(msa_filename,orf2subfamily)
 ##########################
 
 hhblits_directory = os.path.abspath(cwd+'/'+'hhblits')
-a3m_directory = os.path.abspath(hhblits_dir+'/'+'a3m')
-hhm_directory = os.path.abspath(hhblits_dir+'/'+'hhm')
+a3m_directory = os.path.abspath(hhblits_directory+'/'+'a3m')
+hhm_directory = os.path.abspath(hhblits_directory+'/'+'hhm')
 
 if os.path.exists(hhblits_directory) :
     sys.exit(hhblits_directory+' already exists, remove it')
 else:
     os.makedirs(hhm_directory)
     os.makedirs(a3m_directory)    
-
-
 
 
 ###################################################
@@ -181,8 +178,7 @@ for root, dirs, files in os.walk(subfam_directory):
         else:
             print(subfamily+' ==> okay')
 
-        a3m_filename = cwd+'/'+'mmseqs'+'/'+'a3m'+'/'+subfamily+'.a3m'
-        a3m_filename = os.path.abspath(a3m_filename)
+        a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
         creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
 
 
@@ -190,6 +186,10 @@ for root, dirs, files in os.walk(subfam_directory):
 # creating the hhblits database #
 #################################
 
+for subfamily,nb in subfamily2nb.items() :
+    a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
+    cpt = creatingFiles4HhblitsDb(a3m_filename,hhm_directory)
+    print( subfamily+'\t'+str(nb)+'\t'+str(cpt) )
 
 # to parallelize
 
