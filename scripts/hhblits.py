@@ -167,18 +167,21 @@ if __name__ == "__main__":
     hhblits_directory = os.path.abspath(cwd+'/'+'hhblits')
     a3m_directory = os.path.abspath(hhblits_directory+'/'+'a3m')
     hhm_directory = os.path.abspath(hhblits_directory+'/'+'hhm')
+    hhr_directory = os.path.abspath(hhblits_directory+'/'+'hhr')
 
     logging.info('creating directories')
     logging.info('\t'+hhblits_directory)
     logging.info('\t'+a3m_directory)
     logging.info('\t'+hhm_directory)
+    logging.info('\t'+hhr_directory)    
     
     if os.path.exists(hhblits_directory) :
         logging.error(hhblits_directory+' already exists, remove it')
         sys.exit(hhblits_directory+' already exists, remove it')
     else:
         os.makedirs(hhm_directory)
-        os.makedirs(a3m_directory)    
+        os.makedirs(a3m_directory)
+        os.makedirs(hhr_directory)    
 
 
     ###################################################
@@ -200,36 +203,51 @@ if __name__ == "__main__":
             a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
             creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
     logging.info('done')
-
+    print('done')
     
     #################################
     # creating the hhblits database #
     #################################
     print('creating the hhblits database...')
     logging.info('creating the hhblits database...')
+
     # to parallelize
     
     for subfamily,nb in subfamily2nb.items() :
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
         cpt = creatingFiles4HhblitsDb(a3m_filename,hhm_directory)
         if cpt :
-            print('\t'+subfamily+'\t'+str(nb)+'\t'+'==>'+'\t'+'Okay' )
-            logging.info('\t'+subfamily+'\t'+str(nb)+'\t'+'==>'+'\t'+'Okay' )
+            logging.info('\t'+str(nb)+' '+'==>'+' '+'Okay' )
         else:
-            print('\t'+subfamily+'\t'+str(nb)+'\t'+'==>'+'\t'+'Error' )
-            logging.error('\t'+subfamily+'\t'+str(nb)+'\t'+'==>'+'\t'+'Okay' )
+            logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
 
             
     if creatingHhblitsDb(hhblits_directory) :
         logging.info('hhblits database created!')
-        print('hhblits database created!')
     else:
-        print('something went wrong during the hhblits database creation!')
         logging.error('something went wrong during the hhblits database creation!')
 
+    print('done')
         
     ###################
     # running hhblits #
     ###################
+    logging.info('running the hhblits...')
+    print('running the hhblits...')
+
     # to parallelize
     
+    for subfamily,nb in subfamily2nb.items() :
+        hhr_filename = os.path.abspath(hhr_directory+'/'+subfamily+'.hhr')
+        hhm_filename = os.path.abspath(hhm_directory+'/'+subfamily+'.hhm')
+        hhblits_database = hhblits_directory+'/'+'db'
+        cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i '+hhm_filename+' -o '+hhr_filename+' -d '+hhblits_database+'  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1'
+        status = os.system(cmd)
+        if status == 0 :
+            logging.info('\t'+subfamily+' ==> '+'Okay' )
+        else:
+            logging.error( '\t'+subfamily+' ==> '+'Error' )
+
+    logging.info('done')
+    print('done')
+    sys.exit(0)
