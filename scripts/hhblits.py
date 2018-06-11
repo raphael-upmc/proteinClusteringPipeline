@@ -10,6 +10,17 @@ from Bio.SeqRecord import SeqRecord
 import argparse
 import logging
 from datetime import date, time, datetime
+import multiprocessing as mp
+
+
+def runningHhblits(hhm_filename,hhblits_database,hhr_filename) :
+    basename = os.path.basename(hhm_filename).split('.')[0]
+    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i '+hhm_filename+' -o '+hhr_filename+' -d '+hhblits_database+'  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1'
+    status = os.system(cmd)
+    if status == 0 :
+        return basename,True
+    else:
+        return basename,False
 
 def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     basename = os.path.basename(a3m_filename).split('.')[0]
@@ -31,15 +42,15 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
+    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status :
         cpt += 1
 
     if cpt == 0 :
-        return True
+        return basename,True
     else :
-        return False
+        return basename,False
 
 def creatingHhblitsDb(output_directory) :
     cmd = 'cd '+output_directory+'/'+'a3m'+' && '+'ffindex_build -as '+'..'+'/'+'db_a3m.ffdata '+'..'+'/'+'db_a3m.ffindex '+'*.a3m'+' >/dev/null 2>&1'
@@ -126,12 +137,22 @@ def checkMSA(fasta_filename,seqId2seq,nb) :
         return False
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Run all-vs-all hhblits on the subfamilies')
+    parser.add_argument('config_filename', help='the path of the CONFIG_FILENAME created by the subfamilies.py script')
+    parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
+    parser.add_argument('--min-size',type=int,default=2,help='minimal size of the protein families to consider (default: 2)')
+
+    args = parser.parse_args()
+
+    
     t1 = datetime.now()
-    
-    config_filename = sys.argv[1]
-    if not os.path.exists(config_filename) :
+
+    if not os.path.exists(args.config_filename) :
         sys.exit(config_filename+' does not exist, exit')
-    
+    else:
+        config_filename = os.path.abspath(args.config_filename)
+        
     with open(config_filename) as f:
         data = json.load(f)
 
@@ -155,9 +176,11 @@ if __name__ == "__main__":
     logging.info('creating log file '+logging_filename+"\n")
     logging.info('datetime start: '+str(t1)+'\n')
 
-
     logging.info("command line: "+' '.join(sys.argv))
-    logging.info('config_filename: '+config_filename)    
+    logging.info('config_filename: '+config_filename)
+    logging.info('cpu: '+str(args.cpu))
+    logging.info('min-size: '+str(args.min_size)+'\n')   
+
 
     
 
@@ -173,7 +196,7 @@ if __name__ == "__main__":
     logging.info('\t'+hhblits_directory)
     logging.info('\t'+a3m_directory)
     logging.info('\t'+hhm_directory)
-    logging.info('\t'+hhr_directory)    
+    logging.info('\t'+hhr_directory+'\n')    
     
     if os.path.exists(hhblits_directory) :
         logging.error(hhblits_directory+' already exists, remove it')
@@ -192,62 +215,106 @@ if __name__ == "__main__":
     for root, dirs, files in os.walk(subfam_directory):
         for filename in files :
             subfamily = filename.split('.')[0]
-
             fasta_filename = root+'/'+filename
             nb = int(subfamily2nb[ subfamily ])
+
+            if nb < args.min_size :
+                continue
+            
             if not checkMSA(fasta_filename,subfamily2seqList[ subfamily ],nb) :
-                print(subfamily+' ==> ERROR')
+                print(subfamily+'\t'+str(nb)+' ==> ERROR')
             else:
-                print(subfamily+' ==> okay')
+                print(subfamily+'\t'+str(nb)+' ==> okay')
 
             a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
             creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
-    logging.info('done')
+    logging.info('done\n')
     print('done')
     
     #################################
     # creating the hhblits database #
     #################################
-    print('creating the hhblits database...')
-    logging.info('creating the hhblits database...')
+    t2 = datetime.now()
+    print('\ncreating the hhblits database...')
+    logging.info('creating the hhblits database... ('+str(t2)+')')
 
-    # to parallelize
+    # parallelizing
+    results = list()
+    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
     
     for subfamily,nb in subfamily2nb.items() :
-        a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-        cpt = creatingFiles4HhblitsDb(a3m_filename,hhm_directory)
-        if cpt :
-            logging.info('\t'+str(nb)+' '+'==>'+' '+'Okay' )
-        else:
-            logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
 
-            
+        nb = int(nb)
+        if nb < args.min_size :
+            continue
+
+        a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
+        results.append( pool.apply_async( creatingFiles4HhblitsDb, args= (a3m_filename,hhm_directory,) ))      
+    pool.close() # Prevents any more tasks from being submitted to the pool
+    pool.join() # Wait for the worker processes to exit
+
+
+    error = 0
+    for elt in results :
+        subfamily,result = elt.get()
+        if not  result :
+            logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
+            error += 1
+
+    if error != 0 :
+        logging.info('\n'+str(error)+' subfamilies failed to be transformed into hhm\n')
+        
     if creatingHhblitsDb(hhblits_directory) :
-        logging.info('hhblits database created!')
+        logging.info('done\n')
     else:
         logging.error('something went wrong during the hhblits database creation!')
+        sys.exit('something went wrong during the hhblits database creation!')
+    print('done\n')
+    
 
-    print('done')
-        
+
+
     ###################
     # running hhblits #
     ###################
-    logging.info('running the hhblits...')
+    t3 = datetime.now()
+    logging.info('running the hhblits... ('+str(t3)+')')
     print('running the hhblits...')
 
-    # to parallelize
+    # parallelizing
+    results = list()
+    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
     
     for subfamily,nb in subfamily2nb.items() :
+
+        nb = int(nb)
+        if nb < args.min_size :
+            continue
+        
         hhr_filename = os.path.abspath(hhr_directory+'/'+subfamily+'.hhr')
         hhm_filename = os.path.abspath(hhm_directory+'/'+subfamily+'.hhm')
         hhblits_database = hhblits_directory+'/'+'db'
-        cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i '+hhm_filename+' -o '+hhr_filename+' -d '+hhblits_database+'  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1'
-        status = os.system(cmd)
-        if status == 0 :
-            logging.info('\t'+subfamily+' ==> '+'Okay' )
-        else:
-            logging.error( '\t'+subfamily+' ==> '+'Error' )
 
-    logging.info('done')
+        results.append( pool.apply_async( runningHhblits, args= (hhm_filename,hhblits_database,hhr_filename,) ))      
+    pool.close() # Prevents any more tasks from being submitted to the pool
+    pool.join() # Wait for the worker processes to exit
+        
+    error = 0
+    for elt in results :
+        subfamily,result = elt.get()
+        if not  result :
+            logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
+            error += 1
+
+    if error != 0 :
+        logging.info('\n'+str(error)+' hhm failed to run hhblits\n')
+
+
+    logging.info('done\n')
     print('done')
+
+    
+    t4 = datetime.now()
+    logging.info('Script completed at '+str(t4))
+
     sys.exit(0)
