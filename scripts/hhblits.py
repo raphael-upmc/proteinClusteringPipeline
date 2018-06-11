@@ -149,7 +149,7 @@ if __name__ == "__main__":
     t1 = datetime.now()
 
     if not os.path.exists(args.config_filename) :
-        sys.exit(config_filename+' does not exist, exit')
+        sys.exit(args.config_filename+' does not exist, exit')
     else:
         config_filename = os.path.abspath(args.config_filename)
         
