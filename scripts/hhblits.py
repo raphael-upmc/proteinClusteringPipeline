@@ -114,9 +114,16 @@ def readingMsa(msa_filename,orf2family) :
     return subfamily2defline2seqList
         
 def checkingMSA(fasta_filename,seqId2seq,nb) :
+    msaSet = set()
+    for defline in seqId2seq :
+        msaSet.add(defline)
+    
+    
+    fastaSet = set()
     cpt = 0
     for record in SeqIO.parse(fasta_filename,'fasta') :
         cpt += 1
+        fastaSet.add(record.id)
         if record.id not in seqId2seq :
             print(record.id)
             return False
@@ -126,7 +133,7 @@ def checkingMSA(fasta_filename,seqId2seq,nb) :
             if not re.search(msa,str(record.seq)) :
                 print(record.id)
 
-    if nb == cpt and nb == len(seqId2seq) :
+    if msaSet.issubset(fastaSet) :
         return True
     else:
         return False
@@ -207,26 +214,27 @@ if __name__ == "__main__":
     logging.info('checking '+msa_filename+'...')
 
     subfamily2defline2seqList = readingMsa(msa_filename,orf2subfamily)
-    print(subfamily2defline2seqList.keys() )
-    for root, dirs, files in os.walk(subfam_directory):
-        for filename in files :
-            subfamily = filename.split('.')[0]
-            fasta_filename = root+'/'+filename
-            nb = int(subfamily2nb[ subfamily ])
+    error = 0
+    for subfamily,nb in subfamily2nb.items() :
 
-            if nb < args.min_size :
-                continue
-            
-            if not checkingMSA(fasta_filename,subfamily2defline2seqList[ subfamily ],nb) :
-                print(subfamily+'\t'+str(nb)+' ==> ERROR')
-            else:
-                print(subfamily+'\t'+str(nb)+' ==> okay')
+        
+        if int(nb) < args.min_size :
+            continue
 
-            a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-            creatingA3m(a3m_filename,subfamily,subfamily2defline2seqList[ subfamily ])
+        fasta_filename = subfam_directory+'/'+subfamily+'.fa'
+        if not checkingMSA(fasta_filename,subfamily2defline2seqList[ subfamily ],nb) :
+            logging.error(subfamily+'\t'+str(nb)+' ==> ERROR')
+            error += 1
+
+        a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
+        creatingA3m(a3m_filename,subfamily,subfamily2defline2seqList[ subfamily ])
+
+    if error != 0 :
+        logging.info('\n'+str(error)+' subfamilies failed to checking\n')
+
+
     logging.info('done\n')
     print('done')
-    sys.exit()
     
     #################################
     # creating the hhblits database #
