@@ -91,34 +91,29 @@ def creatingA3m(a3m_filename,subfamily,defline2seq) :
         SeqIO.write(record,output,'fasta')
 
 def readingMsa(msa_filename,orf2family) :
-    subfamily2seqList = defaultdict(list)
-    tag = 0
+    subfamily2defline2seqList = dict()
+    defline = None
     file = open(msa_filename,'r')
     for line in file :
-        line = line.rstrip()
-        if re.search('>',line):
-            if tag == 1 :
-                if subfamily in subfamily2seqList :
-                    subfamily2seqList[ subfamily ][ defline.replace('>','') ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+        line = line.strip('\t\r\n\0')
+        if re.search(r'^>',line):
+            if defline != None and defline in orf2family : # store the sequence
+                subfamily = orf2family[ defline ]
+                if subfamily in subfamily2defline2seqList :
+                    subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
                 else:
-                    subfamily2seqList[ subfamily ] = defaultdict(list)
-                    subfamily2seqList[ subfamily ][ defline.replace('>','') ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
-        
-            defline = line.split('>')[1].split()[0]
-            if defline in orf2subfamily :
-                tag = 1
-                subfamily = orf2subfamily[ defline ]
-                seq = ''
-            else:
-                tag = 0
+                    subfamily2defline2seqList[ subfamily ] = defaultdict(list)
+                    subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+
+            # new sequence to create
+            defline = line.replace('>','').split()[0]
+            seq = ''
         else:
-            if tag == 1 :
-                seq += line
-            else:
-                continue
-    return subfamily2seqList
+            seq += line
+
+    return subfamily2defline2seqList
         
-def checkMSA(fasta_filename,seqId2seq,nb) :
+def checkingMSA(fasta_filename,seqId2seq,nb) :
     cpt = 0
     for record in SeqIO.parse(fasta_filename,'fasta') :
         cpt += 1
@@ -166,8 +161,6 @@ if __name__ == "__main__":
     tsv_filename = os.path.abspath(cwd+'/'+'orf2subfamily.tsv')
     orf2subfamily = orf2familyFunction(tsv_filename)
 
-    subfamily2seqList = readingMsa(msa_filename,orf2subfamily)
-
 
     # creating a log file
     logging_filename = cwd+"/logs/"+'hhblits.log'
@@ -210,8 +203,11 @@ if __name__ == "__main__":
     ###################################################
     # checking msa file and creating individual files #
     ###################################################
-    print('checking '+msa_filename+'...')
+    print('checking '+msa_filename+'...')    
     logging.info('checking '+msa_filename+'...')
+
+    subfamily2defline2seqList = readingMsa(msa_filename,orf2subfamily)
+    print(subfamily2defline2seqList.keys() )
     for root, dirs, files in os.walk(subfam_directory):
         for filename in files :
             subfamily = filename.split('.')[0]
@@ -221,15 +217,16 @@ if __name__ == "__main__":
             if nb < args.min_size :
                 continue
             
-            if not checkMSA(fasta_filename,subfamily2seqList[ subfamily ],nb) :
+            if not checkingMSA(fasta_filename,subfamily2defline2seqList[ subfamily ],nb) :
                 print(subfamily+'\t'+str(nb)+' ==> ERROR')
             else:
                 print(subfamily+'\t'+str(nb)+' ==> okay')
 
             a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-            creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
+            creatingA3m(a3m_filename,subfamily,subfamily2defline2seqList[ subfamily ])
     logging.info('done\n')
     print('done')
+    sys.exit()
     
     #################################
     # creating the hhblits database #
