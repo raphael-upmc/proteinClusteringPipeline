@@ -20,6 +20,10 @@ def checkingFasta(fasta_filename) :
         else:
             seqIdSet.add(record.id)
 
+        # looking for additional '>' in the sequence defline
+        if re.search('>',record.id) :
+            print(record.id)
+            
         # funky characters in the aa sequence
         if re.search(noFunkyCharacter,str(record.seq)) :
             continue

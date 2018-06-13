@@ -111,6 +111,16 @@ def readingMsa(msa_filename,orf2family) :
         else:
             seq += line
 
+
+    # the last sequence of the MSA file ==> sneaky sequence !
+    if defline != None and defline in orf2family : # store the sequence
+        subfamily = orf2family[ defline ]
+        if subfamily in subfamily2defline2seqList :
+            subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+        else:
+            subfamily2defline2seqList[ subfamily ] = defaultdict(list)
+            subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+
     return subfamily2defline2seqList
         
 def checkingMSA(fasta_filename,seqId2seq,nb) :
@@ -216,9 +226,9 @@ if __name__ == "__main__":
     subfamily2defline2seqList = readingMsa(msa_filename,orf2subfamily)
     error = 0
     for subfamily,nb in subfamily2nb.items() :
+        nb = int(nb)
 
-        
-        if int(nb) < args.min_size :
+        if nb < args.min_size :
             continue
 
         fasta_filename = subfam_directory+'/'+subfamily+'.fa'
