@@ -54,8 +54,8 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
 
 def creatingHhblitsDb(output_directory) :
 
-    output = open(output_directory+'/hhblits/a3m.list','w')
-    for root, dirs, files in os.walk(output_directory+'/hhblits/a3m'):
+    output = open(output_directory+'/'+'a3m.list','w')
+    for root, dirs, files in os.walk(output_directory+'/'+'a3m'):
         for filename in files :
             output.write(filename+'\n')
     output.close()
@@ -67,8 +67,8 @@ def creatingHhblitsDb(output_directory) :
         return False
 
 
-    output = open(output_directory+'/hhblits/hhm.list','w')
-    for root, dirs, files in os.walk(output_directory+'/hhblits/hhm'):
+    output = open(output_directory+'/'+'hhm.list','w')
+    for root, dirs, files in os.walk(output_directory+'/'+'hhm'):
         for filename in files :
             output.write(filename+'\n')
     output.close()
@@ -236,6 +236,9 @@ if __name__ == "__main__":
     ###################################################
     # checking msa file and creating individual files #
     ###################################################
+
+    problematicSubfamiliesSet = set()
+    
     print('checking '+msa_filename+'...')    
     logging.info('checking '+msa_filename+'...')
 
@@ -250,6 +253,7 @@ if __name__ == "__main__":
         fasta_filename = subfam_directory+'/'+subfamily+'.fa'
         if not checkingMSA(fasta_filename,subfamily2defline2seqList[ subfamily ],nb) :
             logging.error(subfamily+'\t'+str(nb)+' ==> ERROR')
+            problematicSubfamiliesSet.add(subfamily)
             error += 1
 
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
@@ -290,16 +294,35 @@ if __name__ == "__main__":
         subfamily,result = elt.get()
         if not  result :
             logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
+            problematicSubfamiliesSet.add(subfamily)
             error += 1
 
     if error != 0 :
         logging.info('\n'+str(error)+' subfamilies failed to be transformed into hhm\n')
-        
-    if creatingHhblitsDb(hhblits_directory) :
-        logging.info('done\n')
+
+
+    # removing problematic subfamilies to avoid error during the hhblits db creation
+    if len(problematicSubfamiliesSet) != 0 :
+        logging.info('removing problematic subfamilies to avoid error during the hhblits db creation. Those files will not be considered for the Hmm-Hmm comparison')
+        for subfamily in problematicSubfamiliesSet :
+            a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
+            if os.path.exists(a3m_filename) :                
+                os.remove(a3m_filename)
+                logging.info('\t'+a3m_filename)
+
+            hhm_filename = os.path.abspath(hhm_directory+'/'+subfamily+'.hhm')
+            if os.path.exists(hhm_filename) :
+                os.remove(hhm_filename)
+                logging.info('\t'+hhm_filename)
+        logging.info('removing files done\n')
     else:
-        logging.error('something went wrong during the hhblits database creation!')
-        sys.exit('something went wrong during the hhblits database creation!')
+        logging.info('No problematic subfamilies detected!')
+
+    if creatingHhblitsDb(hhblits_directory) :
+        logging.info('hhblits database creation done\n')
+    else:
+        logging.error('something went wrong during the hhblits database creation! exit')
+        sys.exit('something went wrong during the hhblits database creation! exit')
     print('done\n')
     
 
