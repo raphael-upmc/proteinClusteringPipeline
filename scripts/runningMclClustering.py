@@ -8,6 +8,42 @@ from datetime import date, time, datetime
 import shutil
 import json
 
+
+def orf2familyFunction(cwd , subfamily2family) :
+    orf2subfamily = dict()
+    orf2subfamily_filename = cwd+'/'+'orf2subfamily.tsv'
+    file = open(orf2subfamily_filename,'r')
+    header = next(file)
+    for line in file :
+        line = line.rstrip()
+        orf,subfamily = line.split('\t')
+        orf2subfamily[ orf ] = subfamily
+    file.close()
+
+    orf2subfamily2family_filename = cwd+'/'+'orf2subfamily2family.tsv'
+    output2 = open(orf2subfamily2family_filename,'w')
+    output2.write('orf'+'\t'+'subfamily'+'\t'+'family'+'\n')
+    
+    orf2family_filename = cwd+'/'+'orf2family.tsv'
+    output = open(orf2family_filename,'w')
+    output.write('orf'+'\t'+'family'+'\n')
+    
+    for orf,subfamily in orf2subfamily.items() :
+        family = subfamily2family[ subfamily ]
+        output.write(orf+'\t'+family+'\n')
+        output2.write(orf+'\t'+subfamily+'\t'+family+'\n')
+
+    output.close()
+    output2.close()
+
+    
+    
+def creatingMclNetworkFile(hhrHitsList,network_filename) :
+    output = open(network_filename,'w')
+    for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
+        output.write('\t'.join(str(elt) for elt in hit[0:3])+'\n')
+    output.close()
+    
 def parsingMclFile(mcl_filename,subfam2nb) :
     subfam2fam = dict()
     cpt = 0 # number of family
@@ -27,7 +63,13 @@ def parsingMclFile(mcl_filename,subfam2nb) :
         else:
             continue
 
-    return subfam2fam,cpt
+    l1 = len(str(cpt))
+    for subfam,fam in subfam2fam.items() :
+        l2 = len(str(fam))
+        family = 'fam'+''.join( ['0' for s in range(l1 - l2)] ) + str(fam)
+        subfam2fam[ subfam ] = family
+        
+    return subfam2fam
 
 def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
 #    print(hhr_filename)
@@ -117,8 +159,10 @@ if __name__ == "__main__":
     parser.add_argument('config_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
     parser.add_argument('--coverage',type=float,default=0.75,help='coverage threshold (default: 0.75)')
     parser.add_argument('--probs',type=float,default=0.95,help='probability threshold (default: 0.95)')
+    parser.add_argument('--min-size',type=int,default=5,help='minimal size of the protein families to keep (default: 5)')
     parser.add_argument('--force',action='store_true',default=False,help='force MCL clustering (default: False)')
 
+    
     args = parser.parse_args()
 
 
@@ -132,65 +176,107 @@ if __name__ == "__main__":
     with open(config_filename) as f:
         data = json.load(f)
 
-
-    # checking if hhblits runned fine 
     cwd = data['directory']
-    print(cwd)
     subfam2nb = data['clusters']
-    print(len(subfam2nb))
 
+    #######################
+    # creating a log file #
+    #######################
+    
+    logging_filename = cwd+"/logs/"+'runningMclClustering.log'
+    logging.basicConfig(filename=logging_filename, level=logging.INFO,filemode="w")
+    logging.getLogger(__name__)
+    logging.info('creating log file '+logging_filename+"\n")
+    logging.info('datetime start: '+str(t1)+'\n')
+
+    logging.info("command line: "+' '.join(sys.argv))
+    logging.info('config_filename: '+config_filename)
+    logging.info('coverage threshold: '+str(args.coverage))
+    logging.info('probs threshold: '+str(args.probs))   
+    logging.info('min-size: '+str(args.min_size)+'\n')
+    logging.info('force: '+str(args.force)+'\n')   
+        
+
+    ###################################
+    # checking if hhblits runned fine #
+    ###################################
+
+    logging.info('checking the hhm and hhr files...')
     fasta_dir = cwd+'/'+'subfamiliesFasta'
     hhm_dir = cwd+'/'+'hhblits'+'/'+'hhm'
     hhr_dir = cwd+'/'+'hhblits'+'/'+'hhr'
 
     if checkingDirectory(hhm_dir,subfam2nb) :
-        print(hhm_dir+' looks okay')
+        logging.info(hhm_dir+' looks okay')
     else:
         if not args.force :
-            sys.exit(hhm_dir+' does not look okay')
+            logging.error(hhm_dir+' does not look okay, exit')
+            sys.exit(hhm_dir+' does not look okay, exit')
         else:
-            print(hhm_dir+' does not look okay but continue')
+            logging.info(hhm_dir+' does not look okay but continue')
 
 
     if checkingDirectory(hhr_dir,subfam2nb) :
-        print(hhr_dir+' looks okay')
+        logging.info(hhr_dir+' looks okay')
     else:
         if not args.force :
-            sys.exit(hhr_dir+' does not look okay')
+            logging.error(hhr_dir+' does not look okay, exit')
+            sys.exit(hhr_dir+' does not look okay, exit')
         else:
-            print(hhr_dir+' does not look okay but continue')
+            logging.info(hhr_dir+' does not look okay but continue')
+    logging.error('done\n')
 
-    # collecting the results in each hhr file
+    ###########################################        
+    # collecting the results in each hhr file #
+    ###########################################
+
+    logging.info('Collecting the results in each hhr file...')
     hhrHitsList = list()
     for root, dirs, files in os.walk(hhr_dir):
         for filename in files :
             hhr_filename = root+'/'+filename
             hhrHitsList.extend( readingHhrFile(hhr_filename,args.coverage,args.probs) )
 
-    output_network_filename = cwd+'/'+'hhblits'+'/'+'hhr.network'
-    output = open(output_network_filename,'w')
-    for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
-        output.write('\t'.join(str(elt) for elt in hit[0:3])+'\n')
-    output.close()
-
-
-    # running mcl
+    mcl_network_filename = cwd+'/'+'hhblits'+'/'+'hhr.network'
+    creatingMclNetworkFile(hhrHitsList,mcl_network_filename)
+    logging.info('done\n')
+    
+    ###############
+    # running mcl #
+    ###############
+    logging.info('running MCL clustering...')
     mcl_log_filename = cwd+'/'+'logs'+'/'+'mcl.log'
     mcl_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.mcl'
-    cmd = "/usr/bin/mcl "+output_network_filename+" --abc -I 2.0 -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
-    print(cmd)
+
+    cmd = "/usr/bin/mcl "+mcl_network_filename+" --abc -I 2.0 -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
+    logging.info(cmd)
     status = os.system(cmd)
+    
     if status != 0 :
+        logging.error("/usr/bin/mcl has a non 0 status! exit!")
         sys.exit("/usr/bin/mcl has a non 0 status! exit!")
 
+    logging.info('done\n')
 
-    # parsing mcl results
-    subfam2fam,cpt = parsingMclFile(mcl_filename,subfam2nb)    
-    print(len(subfam2fam))
-    print(cpt)
+    #######################
+    # parsing mcl results #
+    #######################
+    logging.info('parsing MCL clustering results...')
+    subfamily2family = parsingMclFile(mcl_filename,subfam2nb)    
 
-    network_attr_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.attr'
-    output = open(network_attr_filename,'w')
-    for subfam,fam in subfam2fam.items() :
-        output.write(subfam+'\t'+'fam'+str(fam)+'\n')
-    output.close()
+
+
+    # network_attr_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.attr'
+    # output = open(network_attr_filename,'w')
+    # for subfam,fam in subfam2fam.items() :
+    #     output.write(subfam+'\t'+'fam'+str(fam)+'\n')
+    # output.close()
+
+    
+    orf2familyFunction(cwd , subfamily2family)    
+
+    logging.info('done\n')
+
+
+    t2 = datetime.now()
+    logging.info('script ended at '+str(t2))
