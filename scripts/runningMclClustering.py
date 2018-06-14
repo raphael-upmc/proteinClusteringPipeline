@@ -68,7 +68,9 @@ def parsingMclFile(mcl_filename,subfam2nb) :
         l2 = len(str(fam))
         family = 'fam'+''.join( ['0' for s in range(l1 - l2)] ) + str(fam)
         subfam2fam[ subfam ] = family
-        
+
+    print(len(subfam2fam))
+    print(cpt)
     return subfam2fam
 
 def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
@@ -261,7 +263,7 @@ if __name__ == "__main__":
     #######################
     # parsing mcl results #
     #######################
-    logging.info('parsing MCL clustering results...')
+    logging.info('parsing MCL clustering results and creating the final output files...')
     subfamily2family = parsingMclFile(mcl_filename,subfam2nb)    
 
 
@@ -280,3 +282,4 @@ if __name__ == "__main__":
 
     t2 = datetime.now()
     logging.info('script ended at '+str(t2))
+    sys.exit(0)

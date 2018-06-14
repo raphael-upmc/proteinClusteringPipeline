@@ -53,12 +53,28 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
         return basename,False
 
 def creatingHhblitsDb(output_directory) :
-    cmd = 'cd '+output_directory+'/'+'a3m'+' && '+'ffindex_build -as '+'..'+'/'+'db_a3m.ffdata '+'..'+'/'+'db_a3m.ffindex '+'*.a3m'+' >/dev/null 2>&1'
+
+    output = open(output_directory+'/hhblits/a3m.list','w')
+    for root, dirs, files in os.walk(output_directory+'/hhblits/a3m'):
+        for filename in files :
+            output.write(filename+'\n')
+    output.close()
+
+
+    cmd = 'cd '+output_directory+'/'+'a3m'+' && '+'ffindex_build -as '+'..'+'/'+'db_a3m.ffdata '+'..'+'/'+'db_a3m.ffindex '+'-f ../a3m.list'+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return False
 
-    cmd = 'cd '+output_directory+'/'+'hhm'+' && '+'ffindex_build -as '+'..'+'/'+'db_hhm.ffdata '+'..'+'/'+'db_hhm.ffindex '+'*.hhm'+' >/dev/null 2>&1'
+
+    output = open(output_directory+'/hhblits/hhm.list','w')
+    for root, dirs, files in os.walk(output_directory+'/hhblits/hhm'):
+        for filename in files :
+            output.write(filename+'\n')
+    output.close()
+
+    
+    cmd = 'cd '+output_directory+'/'+'hhm'+' && '+'ffindex_build -as '+'..'+'/'+'db_hhm.ffdata '+'..'+'/'+'db_hhm.ffindex '+'-f ../hhm.list'+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return False
