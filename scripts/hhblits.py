@@ -344,7 +344,10 @@ if __name__ == "__main__":
         nb = int(nb)
         if nb < args.min_size :
             continue
-        
+
+        if subfamily in problematicSubfamiliesSet :
+            continue
+
         hhr_filename = os.path.abspath(hhr_directory+'/'+subfamily+'.hhr')
         hhm_filename = os.path.abspath(hhm_directory+'/'+subfamily+'.hhm')
         hhblits_database = hhblits_directory+'/'+'db'

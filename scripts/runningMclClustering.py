@@ -10,6 +10,7 @@ import json
 
 
 def orf2familyFunction(cwd , subfamily2family) :
+    subfamilySet = set()
     orf2subfamily = dict()
     orf2subfamily_filename = cwd+'/'+'orf2subfamily.tsv'
     file = open(orf2subfamily_filename,'r')
@@ -18,6 +19,7 @@ def orf2familyFunction(cwd , subfamily2family) :
         line = line.rstrip()
         orf,subfamily = line.split('\t')
         orf2subfamily[ orf ] = subfamily
+        subfamilySet.add(subfamily)
     file.close()
 
     orf2subfamily2family_filename = cwd+'/'+'orf2subfamily2family.tsv'
@@ -27,17 +29,20 @@ def orf2familyFunction(cwd , subfamily2family) :
     orf2family_filename = cwd+'/'+'orf2family.tsv'
     output = open(orf2family_filename,'w')
     output.write('orf'+'\t'+'family'+'\n')
-    
+    familySet = set()
     for orf,subfamily in orf2subfamily.items() :
         family = subfamily2family[ subfamily ]
         output.write(orf+'\t'+family+'\n')
         output2.write(orf+'\t'+subfamily+'\t'+family+'\n')
-
+        familySet.add(family)
     output.close()
     output2.close()
 
-    
-    
+    cptOrf = len(orf2subfamily)
+    cptSubfam = len(subfamilySet)
+    cptFam = len(familySet)
+    return cptOrf,cptSubfam,cptFam
+
 def creatingMclNetworkFile(hhrHitsList,network_filename) :
     output = open(network_filename,'w')
     for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
@@ -275,8 +280,8 @@ if __name__ == "__main__":
     # output.close()
 
     
-    orf2familyFunction(cwd , subfamily2family)    
-
+    orf,subfamily,family = orf2familyFunction(cwd , subfamily2family)    
+    logging.info(str(orf)+' ORFs were clustered into '+str(subfamily)+' subfamilies and '+str(family)+' families')
     logging.info('done\n')
 
 
