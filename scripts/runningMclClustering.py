@@ -46,7 +46,14 @@ def orf2familyFunction(cwd , subfamily2family) :
 def creatingMclNetworkFile(hhrHitsList,network_filename) :
     output = open(network_filename,'w')
     for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
-        output.write('\t'.join(str(elt) for elt in hit[0:3])+'\n')
+        query = hit[0]
+        subject = hit[1]
+        probs = float(hit[2])/100.0
+        qcover = float(hit[3])
+        scover = float(hit[4])
+        weight = probs * max([qcover,scover])
+#        print(str(qcover)+'\t'+str(scover)+'\t'+str(probs)+'\t'+str(weight))
+        output.write(query+'\t'+subject+'\t'+str(weight)+'\n')
     output.close()
     
 def parsingMclFile(mcl_filename,subfam2nb) :
@@ -231,7 +238,7 @@ if __name__ == "__main__":
             sys.exit(hhr_dir+' does not look okay, exit')
         else:
             logging.info(hhr_dir+' does not look okay but continue')
-    logging.error('done\n')
+    logging.info('done\n')
 
     ###########################################        
     # collecting the results in each hhr file #
@@ -243,6 +250,7 @@ if __name__ == "__main__":
         for filename in files :
             hhr_filename = root+'/'+filename
             hhrHitsList.extend( readingHhrFile(hhr_filename,args.coverage,args.probs) )
+
 
     mcl_network_filename = cwd+'/'+'hhblits'+'/'+'hhr.network'
     creatingMclNetworkFile(hhrHitsList,mcl_network_filename)
