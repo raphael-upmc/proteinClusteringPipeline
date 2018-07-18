@@ -41,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('fasta_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
     parser.add_argument('--output-directory',help='the output directory where the results will be store (default: ./FASTA_FILENAME_proteinClutering)')
     parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
+    parser.add_argument('--coverage',type=int,default=0.5,help='considered matches above this fraction of aligned (covered) residues (default: 0.5)')
     parser.add_argument('--min-size',type=int,default=2,help='minimal size of the protein families to retain (default: 2)')
 
     args = parser.parse_args()
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     logging.info('fasta_filename: '+fasta_filename)    
     logging.info('output directory: '+directory)
     logging.info('cpu: '+str(args.cpu))
+    logging.info('coverage: '+str(args.coverage))
     logging.info('min-size-families: '+str(args.min_size)+'\n')
 
 
@@ -128,7 +130,7 @@ if __name__ == "__main__":
 
     cluster_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu'
     log_filename = directory+'/logs/'+'mmseqs_cluster.log'
-    mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c 0.5 --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'+' >'+log_filename
+    mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c '+str(args.coverage)+' --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'+' >'+log_filename
     logging.info('running '+mmseqs_cluster_cmd)
     status = os.system(mmseqs_cluster_cmd)
 

@@ -30,27 +30,24 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     # reformat.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
     status = os.system(cmd)
-    if status :
-        cpt += 1
+    if status != 0 :
+        return basename,False
 
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
-    if status :
-        cpt += 1
-
+    if status != 0 :
+        return basename,False
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
     status = os.system(cmd)
-    if status :
-        cpt += 1
-
-    if cpt == 0 :
-        return basename,True
-    else :
+    if status != 0:
         return basename,False
+    
+    return basename,True
+
 
 def creatingHhblitsDb(output_directory) :
 
