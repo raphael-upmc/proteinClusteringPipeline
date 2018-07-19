@@ -76,7 +76,7 @@ def creatingHhblitsDb(output_directory) :
     if status != 0 :
         return False
 
-    cmd = 'cstranslate -A $HHLIB/data/cs219.lib -D $HHLIB/data/context_data.lib -I a3m -x 0.3 -c 4'+' -f -i '+output_directory+'/'+'db_a3m'+' -o '+output_directory+'/'+'db_cs219'+' -b'+' >/dev/null 2>&1'
+    cmd = 'cstranslate -A /home/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/cs219.lib -D /home/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/context_data.lib -I a3m -x 0.3 -c 4'+' -f -i '+output_directory+'/'+'db_a3m'+' -o '+output_directory+'/'+'db_cs219'+' -b'+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return False

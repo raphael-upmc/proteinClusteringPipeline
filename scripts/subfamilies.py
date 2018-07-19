@@ -29,6 +29,7 @@ def checkingFasta(fasta_filename) :
         if re.search(noFunkyCharacter,str(record.seq)) :
             continue
         else:
+            print(record.description)
             badSequenceList.append(record)
     return badSequenceList,duplicatedSeqIdSet
 
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument('fasta_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
     parser.add_argument('--output-directory',help='the output directory where the results will be store (default: ./FASTA_FILENAME_proteinClutering)')
     parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
-    parser.add_argument('--coverage',type=int,default=0.5,help='considered matches above this fraction of aligned (covered) residues (default: 0.5)')
+    parser.add_argument('--coverage',type=float,default=0.5,help='considered matches above this fraction of aligned (covered) residues (default: 0.5)')
     parser.add_argument('--min-size',type=int,default=2,help='minimal size of the protein families to retain (default: 2)')
 
     args = parser.parse_args()

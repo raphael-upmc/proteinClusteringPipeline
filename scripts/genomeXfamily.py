@@ -8,7 +8,7 @@ import argparse
 parser = argparse.ArgumentParser(description='creating a matrix with genomes as rows and family as columns')
 parser.add_argument('orf2family_filename', help='the path of the ORF2FAMILY_FILENAME that is a tab-separated file with col1: orf name col2: family. WARNING: the first line is skipped (header)')
 parser.add_argument('orf2genome_filename', help='the path of the ORF2GENOME_FILENAME that is a tab-separated file with col1: orf name col2: genome. WARNING: the first line is skipped (header)')
-parser.add_argument('output_filename', help='the path of the MATRIX_FILENAME')
+parser.add_argument('matrix_filename', help='the path of the MATRIX_FILENAME')
 parser.add_argument('--min-size',type=int,default=3,help='minimal number of distinct genomes where the protein families is present to be reported in the matrix (default: 3)')
 
 args = parser.parse_args()
@@ -26,7 +26,7 @@ else:
     orf2genome_filename = os.path.abspath(args.orf2genome_filename)
         
 
-family_threshold = args.min-size
+family_threshold = args.min_size
         
 orf2genome = dict()
 file = open(orf2genome_filename,'r')
@@ -57,7 +57,7 @@ for family,genomeSet in family2genomes.items() :
         familySet.add(family)
 
 family2profile = defaultdict(list)
-output = open(matrix_filename,'w')
+output = open(args.matrix_filename,'w')
 output.write('\t'+'\t'.join(list(familySet))+'\n')
 for genome in genome2family :
     output.write(genome)
