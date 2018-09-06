@@ -12,6 +12,11 @@ import logging
 from datetime import date, time, datetime
 import multiprocessing as mp
 
+# add these line in your ~/.bashrc file:
+# export HHLIB=/home/meheurap/programs/hhsuite-3.0-beta.3-Linux
+# PATH=$HHLIB/scripts:$HHLIB/bin:$PATH
+# run . ~/.bashrc
+
 
 def runningHhblits(hhm_filename,hhblits_database,hhr_filename) :
     basename = os.path.basename(hhm_filename).split('.')[0]
@@ -31,12 +36,14 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
+        sys.exit(cmd)
         return basename,False
 
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
+        sys.exit(cmd)
         return basename,False
 
     # hhmake
@@ -44,6 +51,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0:
+        sys.exit(cmd)
         return basename,False
     
     return basename,True

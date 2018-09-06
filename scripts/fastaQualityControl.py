@@ -87,7 +87,12 @@ if __name__ == "__main__":
     if len(badSequenceList) > 0 or len(duplicatedSeqIdSet) > 0 :
         print(str(cpt)+' fasta sequences')
         print('Sequences with funky characters: '+str(len(badSequenceList)))
+        for seq in badSequenceList :
+            print('\t'+seq)
         print('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet))+'\n')
+        for seq in badSequenceList :
+            print('\t'+seq)
+
         if args.cleaned_fasta_filename != None :
             print('Creation of a cleaned fasta file: '+os.path.abspath(args.cleaned_fasta_filename))
             cpt = writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,os.path.abspath(args.cleaned_fasta_filename))
