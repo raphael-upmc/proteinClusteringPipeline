@@ -10,6 +10,7 @@ parser.add_argument('orf2family_filename', help='the path of the ORF2FAMILY_FILE
 parser.add_argument('orf2genome_filename', help='the path of the ORF2GENOME_FILENAME that is a tab-separated file with col1: orf name col2: genome. WARNING: the first line is skipped (header)')
 parser.add_argument('matrix_filename', help='the path of the MATRIX_FILENAME')
 parser.add_argument('--min-size',type=int,default=3,help='minimal number of distinct genomes where the protein families is present to be reported in the matrix (default: 3)')
+parser.add_argument('--binary',type=bool,default=True,help='binary or count matrix (default: True (binary))')
 
 args = parser.parse_args()
 
@@ -37,6 +38,7 @@ for line in file :
     orf2genome[ orf ] = genome
 file.close()
 
+genome2family2count = dict()
 family2genomes = defaultdict(set)
 genome2family = defaultdict(set)
 file = open(orf2family_filename,'r')
@@ -47,6 +49,11 @@ for line in file :
     genome = orf2genome[ orf ]
     genome2family[ genome ].add(family)
     family2genomes[ family ].add(genome)
+    if genome not in genome2family2count :
+        genome2family2count[genome] = defaultdict(int)
+        genome2family2count[genome][family] += 1
+    else:
+        genome2family2count[genome][family] += 1
 file.close()
 
 familySet = set()
@@ -63,7 +70,10 @@ for genome in genome2family :
     output.write(genome)
     for family in familySet :
         if family  in genome2family[ genome ]  :
-            output.write('\t'+'1')
+            if args.binary :
+                output.write('\t'+'1')
+            else:
+                output.write('\t'+str( genome2family2count[genome][family] ) )
         else:
             output.write('\t'+'0')
     output.write('\n')

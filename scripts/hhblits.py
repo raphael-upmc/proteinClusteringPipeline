@@ -53,7 +53,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
         # sys.exit(cmd)
         return basename,False
 
-    # checking if the .a3m is empty
+    # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
         # sys.exit(a3m_filename+' has no sequences')
         return basename,False
@@ -66,7 +66,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
         # sys.exit(cmd)
         return basename,False
 
-    # checking if the .a3m is empty
+    # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
         # sys.exit(a3m_filename+' has no sequences')
         return basename,False
