@@ -27,6 +27,20 @@ def runningHhblits(hhm_filename,hhblits_database,hhr_filename) :
     else:
         return basename,False
 
+def isEmpty(a3m_filename) :
+    file = open(a3m_filename,'r')
+    for line in file :
+        line = line.rstrip()
+        if re.search(r'>',line) :
+            return False
+        else:
+            continue
+    file.close()
+    
+    return True
+
+    
+    
 def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     basename = os.path.basename(a3m_filename).split('.')[0]
 
@@ -36,14 +50,25 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
-        sys.exit(cmd)
+        # sys.exit(cmd)
         return basename,False
 
+    # checking if the .a3m is empty
+    if isEmpty(a3m_filename) :
+        # sys.exit(a3m_filename+' has no sequences')
+        return basename,False
+
+    
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
-        sys.exit(cmd)
+        # sys.exit(cmd)
+        return basename,False
+
+    # checking if the .a3m is empty
+    if isEmpty(a3m_filename) :
+        # sys.exit(a3m_filename+' has no sequences')
         return basename,False
 
     # hhmake
@@ -51,7 +76,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0:
-        sys.exit(cmd)
+        # sys.exit(cmd)
         return basename,False
     
     return basename,True
