@@ -11,7 +11,7 @@ parser.add_argument('orf2genome_filename', help='the path of the ORF2GENOME_FILE
 parser.add_argument('matrix_filename', help='the path of the MATRIX_FILENAME')
 parser.add_argument('--min-size',type=int,default=3,help='minimal number of distinct genomes where the protein families is present to be reported in the matrix (default: 3)')
 parser.add_argument('--count',action='store_true',default=False,help='create a count matrix (default: create a binary matrix)')
-
+parser.add_argument('--genomeList',help='the path to the GENOME_LIST_FILENAME to consider')
 args = parser.parse_args()
 
 
@@ -25,8 +25,18 @@ if not os.path.exists(args.orf2genome_filename) :
     sys.exit(args.orf2genome_filename+' does not exist, exit')
 else:
     orf2genome_filename = os.path.abspath(args.orf2genome_filename)
-        
 
+genomeList = 0    
+if args.genomeList != None and os.path.exists(args.genomeList) :    
+    genomeList = 1
+    genomeSet = set()
+    file = open(args.genomeList,'r')
+    for line in file :
+        genome = line.rstrip()
+        genomeSet.add(genome)
+    file.close()
+
+    
 family_threshold = args.min_size
         
 orf2genome = dict()
@@ -47,6 +57,9 @@ for line in file :
     line = line.rstrip()
     orf,family = line.split('\t')
     genome = orf2genome[ orf ]
+    if genomeList == 1 and genome not in genomeSet :        
+            continue
+        
     genome2family[ genome ].add(family)
     family2genomes[ family ].add(genome)
     if genome not in genome2family2count :
