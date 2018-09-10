@@ -10,7 +10,7 @@ parser.add_argument('orf2family_filename', help='the path of the ORF2FAMILY_FILE
 parser.add_argument('orf2genome_filename', help='the path of the ORF2GENOME_FILENAME that is a tab-separated file with col1: orf name col2: genome. WARNING: the first line is skipped (header)')
 parser.add_argument('matrix_filename', help='the path of the MATRIX_FILENAME')
 parser.add_argument('--min-size',type=int,default=3,help='minimal number of distinct genomes where the protein families is present to be reported in the matrix (default: 3)')
-parser.add_argument('--binary',type=bool,default=True,help='binary or count matrix (default: True (binary))')
+parser.add_argument('--count',action='store_true',default=False,help='create a count matrix (default: create a binary matrix)')
 
 args = parser.parse_args()
 
@@ -70,7 +70,7 @@ for genome in genome2family :
     output.write(genome)
     for family in familySet :
         if family  in genome2family[ genome ]  :
-            if args.binary :
+            if not args.count :
                 output.write('\t'+'1')
             else:
                 output.write('\t'+str( genome2family2count[genome][family] ) )
@@ -78,3 +78,6 @@ for genome in genome2family :
             output.write('\t'+'0')
     output.write('\n')
 output.close()
+
+
+print('Genome X family matrix created ('+str(len(genome2family))+' genomes) ('+str(len(familySet))+' families)')
