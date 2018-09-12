@@ -90,7 +90,7 @@ if __name__ == "__main__":
         for seq in badSequenceList :
             print('\t'+seq)
         print('Sequences with duplicated seqId: '+str(len(duplicatedSeqIdSet))+'\n')
-        for seq in badSequenceList :
+        for seq in duplicatedSeqIdSet :
             print('\t'+seq)
 
         if args.cleaned_fasta_filename != None :
