@@ -7,7 +7,7 @@ import logging
 from datetime import date, time, datetime
 import shutil
 import json
-
+from Bio import SeqIO
 
 def orf2familyFunction(cwd , subfamily2family) :
     subfamilySet = set()
@@ -170,12 +170,12 @@ if __name__ == "__main__":
     t1 = datetime.now()
     
     parser = argparse.ArgumentParser(description='Run protein sequences clustering')
-    parser.add_argument('config_filename', help='the path of the FASTA_FILENAME that contains the proteins sequences to cluster')
+    parser.add_argument('config_filename', help='the path of the CONFIG_FILE')
     parser.add_argument('--coverage',type=float,default=0.75,help='coverage threshold (default: 0.75)')
     parser.add_argument('--probs',type=float,default=0.95,help='probability threshold (default: 0.95)')
     parser.add_argument('--min-size',type=int,default=5,help='minimal size of the protein families to keep (default: 5)')
     parser.add_argument('--force',action='store_true',default=False,help='force MCL clustering (default: False)')
-
+    parser.add_argument('--fasta',action='store_true',default=False,help='creating a folder with fasta file for each family (default: False)')
     
     args = parser.parse_args()
 
@@ -193,6 +193,11 @@ if __name__ == "__main__":
     cwd = data['directory']
     subfam2nb = data['clusters']
 
+    if os.path.exists(cwd+'/'+'familiesFasta') :
+        shutil.rmtree(cwd+'/'+'familiesFasta', ignore_errors=True)
+
+            
+
     #######################
     # creating a log file #
     #######################
@@ -208,8 +213,8 @@ if __name__ == "__main__":
     logging.info('coverage threshold: '+str(args.coverage))
     logging.info('probs threshold: '+str(args.probs))   
     logging.info('min-size: '+str(args.min_size)+'\n')
-    logging.info('force: '+str(args.force)+'\n')   
-        
+    logging.info('force: '+str(args.force))
+    logging.info('fasta: '+str(args.fasta)+'\n')   
 
     ###################################
     # checking if hhblits runned fine #
@@ -293,6 +298,21 @@ if __name__ == "__main__":
     logging.info('done\n')
 
 
+    if args.fasta :
+        os.mkdir(cwd+'/'+'familiesFasta')
+        family2subfamilies = defaultdict(list)
+        for subfamily,family in subfamily2family.items() :
+             family2subfamilies[ family ].append(subfamily)
+
+        for family,liste in family2subfamilies.items() :
+            family_filename = cwd+'/'+'familiesFasta'+'/'+family+'.fa'
+            output = open(family_filename,'w')
+            for subfamily in liste :
+                subfamily_filename = cwd+'/'+'subfamiliesFasta'+'/'+subfamily+'.fa'
+                for record in SeqIO.parse(subfamily_filename,'fasta') :
+                    SeqIO.write(record,output,'fasta')
+            output.close()
+        
     t2 = datetime.now()
     logging.info('script ended at '+str(t2))
     sys.exit(0)
