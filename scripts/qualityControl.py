@@ -29,13 +29,13 @@ if __name__ == "__main__":
         
 
     # reading annotation filename
-    orf2annotation = dict()
+    orf2annotation = defaultdict(list)
     annotation2count = defaultdict(int)
     file = open(annotation_filename,'r')
     for line in file :
         line = line.rstrip()
         orf,annotation = line.split('\t')
-        orf2annotation[orf] = annotation
+        orf2annotation[orf].append(annotation)
         annotation2count[annotation] += 1
     file.close()
 
@@ -48,8 +48,8 @@ if __name__ == "__main__":
         orf,family = line.split('\t')
         family2count[family] += 1
         if orf in orf2annotation :
-            annotation = orf2annotation[ orf ]
-            annotation2family[ annotation ].append(family)
+            for annotation in orf2annotation[ orf ] :
+                annotation2family[ annotation ].append(family)
         else:
             continue
     file.close()
