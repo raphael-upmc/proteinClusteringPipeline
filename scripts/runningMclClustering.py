@@ -44,6 +44,7 @@ def orf2familyFunction(cwd , subfamily2family) :
     return cptOrf,cptSubfam,cptFam
 
 def creatingMclNetworkFile(hhrHitsList,network_filename) :
+    edge2weight = dict()
     output = open(network_filename,'w')
     for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
         query = hit[0]
@@ -52,9 +53,16 @@ def creatingMclNetworkFile(hhrHitsList,network_filename) :
         qcover = float(hit[3])
         scover = float(hit[4])
         weight = probs * max([qcover,scover])
-#        print(str(qcover)+'\t'+str(scover)+'\t'+str(probs)+'\t'+str(weight))
+        edge = '\t'.join( sorted( [query,subject] ) )
+        if edge in edge2weight :
+            if weight > edge2weight[edge] :
+                edge2weight[ edge ] = weight
+        else:
+            edge2weight[ edge ] = weight            
         output.write(query+'\t'+subject+'\t'+str(weight)+'\n')
     output.close()
+
+
     
 def parsingMclFile(mcl_filename,subfam2nb) :
     subfam2fam = dict()
