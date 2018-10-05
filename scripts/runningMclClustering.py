@@ -45,7 +45,6 @@ def orf2familyFunction(cwd , subfamily2family) :
 
 def creatingMclNetworkFile(hhrHitsList,network_filename) :
     edge2weight = dict()
-    output = open(network_filename,'w')
     for hit in sorted(hhrHitsList,key= lambda x:x[0]) :
         query = hit[0]
         subject = hit[1]
@@ -58,8 +57,11 @@ def creatingMclNetworkFile(hhrHitsList,network_filename) :
             if weight > edge2weight[edge] :
                 edge2weight[ edge ] = weight
         else:
-            edge2weight[ edge ] = weight            
-        output.write(query+'\t'+subject+'\t'+str(weight)+'\n')
+            edge2weight[ edge ] = weight
+
+    output = open(network_filename,'w')
+    for edge,weight in edge2weight.items() :
+        output.write(edge+'\t'+str(weight)+'\n')
     output.close()
 
 
