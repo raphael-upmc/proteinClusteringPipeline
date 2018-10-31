@@ -63,11 +63,13 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
+#        print(a3m_filename+' has no sequences')
         # sys.exit(cmd)
         return basename,False
 
     # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
+#        print(a3m_filename+' has no sequences')
         # sys.exit(a3m_filename+' has no sequences')
         return basename,False
 
@@ -156,7 +158,6 @@ def readingMsa(msa_filename,orf2family) :
             seq = ''
         else:
             seq += line
-
 
     # the last sequence of the MSA file ==> sneaky sequence !
     if defline != None and defline in orf2family : # store the sequence
@@ -295,7 +296,7 @@ if __name__ == "__main__":
 
     logging.info('done\n')
     print('done')
-    
+
     #################################
     # creating the hhblits database #
     #################################
