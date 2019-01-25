@@ -12,6 +12,7 @@ parser.add_argument('matrix_filename', help='the path of the MATRIX_FILENAME')
 parser.add_argument('--min-size',type=int,default=3,help='minimal number of distinct genomes where the protein families is present to be reported in the matrix (default: 3)')
 parser.add_argument('--count',action='store_true',default=False,help='create a count matrix (default: create a binary matrix)')
 parser.add_argument('--genomeList',help='the path to the GENOME_LIST_FILENAME to consider')
+parser.add_argument('--familyList',help='the path to the FAMILY_LIST_FILENAME to consider')
 args = parser.parse_args()
 
 
@@ -36,6 +37,16 @@ if args.genomeList != None and os.path.exists(args.genomeList) :
         genomeSet.add(genome)
     file.close()
 
+familyList = 0    
+if args.familyList != None and os.path.exists(args.familyList) :    
+    familyList = 1
+    familySet = set()
+    file = open(args.familyList,'r')
+    for line in file :
+        family = line.rstrip()
+        familySet.add(family)
+    file.close()
+    
     
 family_threshold = args.min_size
         
@@ -58,8 +69,11 @@ for line in file :
     orf,family = line.split('\t')
     genome = orf2genome[ orf ]
     if genomeList == 1 and genome not in genomeSet :        
-            continue
-        
+        continue
+
+    if familyList == 1 and family not in familySet :        
+        continue
+
     genome2family[ genome ].add(family)
     family2genomes[ family ].add(genome)
     if genome not in genome2family2count :
