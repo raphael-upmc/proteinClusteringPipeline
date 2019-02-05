@@ -12,6 +12,7 @@ import logging
 from datetime import date, time, datetime
 import multiprocessing as mp
 
+
 # add these line in your ~/.bashrc file:
 # export HHLIB=/home/meheurap/programs/hhsuite-3.0-beta.3-Linux
 # PATH=$HHLIB/scripts:$HHLIB/bin:$PATH
@@ -51,12 +52,12 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     status = os.system(cmd)
     if status != 0 :
         # sys.exit(cmd)
-        return basename,False
+        return basename,'reformat.pl',False
 
     # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
         # sys.exit(a3m_filename+' has no sequences')
-        return basename,False
+        return basename,'reformat.pl',False
 
     
     # addss.pl
@@ -65,13 +66,13 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     if status != 0 :
 #        print(a3m_filename+' has no sequences')
         # sys.exit(cmd)
-        return basename,False
+        return basename,'addss.pl',False
 
     # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
 #        print(a3m_filename+' has no sequences')
         # sys.exit(a3m_filename+' has no sequences')
-        return basename,False
+        return basename,'empty',False
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
@@ -79,9 +80,9 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     status = os.system(cmd)
     if status != 0:
         # sys.exit(cmd)
-        return basename,False
+        return basename,'hhmake',False
     
-    return basename,True
+    return basename,'worked',True
 
 
 def creatingHhblitsDb(output_directory) :
@@ -132,14 +133,14 @@ def orf2familyFunction(tsv_filename) :
     return orf2family
 
 
-def creatingA3m(a3m_filename,subfamily,defline2seq) :
+def creatingA3m(a3m_filename,subfamily,seqList) :
     output = open(a3m_filename,'w')
     output.write('#'+subfamily+'\n')
-    for defline,record in defline2seq.items() :
+    for record in seqList :
         SeqIO.write(record,output,'fasta')
 
 def readingMsa(msa_filename,orf2family) :
-    subfamily2defline2seqList = dict()
+    subfamily2seqList = dict()
     defline = None
     file = open(msa_filename,'r')
     for line in file :
@@ -147,11 +148,11 @@ def readingMsa(msa_filename,orf2family) :
         if re.search(r'^>',line):
             if defline != None and defline in orf2family : # store the sequence
                 subfamily = orf2family[ defline ]
-                if subfamily in subfamily2defline2seqList :
-                    subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+                if subfamily in subfamily2seqList :
+                    subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
                 else:
-                    subfamily2defline2seqList[ subfamily ] = defaultdict(list)
-                    subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+                    subfamily2seqList[ subfamily ] = list()
+                    subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
 
             # new sequence to create
             defline = line.replace('>','').split()[0]
@@ -162,18 +163,18 @@ def readingMsa(msa_filename,orf2family) :
     # the last sequence of the MSA file ==> sneaky sequence !
     if defline != None and defline in orf2family : # store the sequence
         subfamily = orf2family[ defline ]
-        if subfamily in subfamily2defline2seqList :
-            subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+        if subfamily in subfamily2seqList :
+            subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
         else:
-            subfamily2defline2seqList[ subfamily ] = defaultdict(list)
-            subfamily2defline2seqList[ subfamily ][ defline ] =  SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="")
+            subfamily2seqList[ subfamily ] = list()
+            subfamily2seqList[ subfamily ].append ( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
 
-    return subfamily2defline2seqList
+    return subfamily2seqList
         
-def checkingMSA(fasta_filename,seqId2seq,nb) :
+def checkingMSA(fasta_filename,seqList,nb) :
     msaSet = set()
-    for defline in seqId2seq :
-        msaSet.add(defline)
+    for record in seqList :
+        msaSet.add(record.id)
     
     
     fastaSet = set()
@@ -181,14 +182,12 @@ def checkingMSA(fasta_filename,seqId2seq,nb) :
     for record in SeqIO.parse(fasta_filename,'fasta') :
         cpt += 1
         fastaSet.add(record.id)
-        if record.id not in seqId2seq :
+        if record.id not in msaSet :
             print(record.id)
             return False
         else:
             continue
-            msa = str(seqId2seq[ record.id ].seq).replace('-','')
-            if not re.search(msa,str(record.seq)) :
-                print(record.id)
+
 
     if msaSet.issubset(fastaSet) :
         return True
@@ -272,27 +271,35 @@ if __name__ == "__main__":
     
     print('checking '+msa_filename+'...')    
     logging.info('checking '+msa_filename+'...')
+    
+    subfamily2seqList = readingMsa(msa_filename,orf2subfamily)
 
-    subfamily2defline2seqList = readingMsa(msa_filename,orf2subfamily)
     error = 0
     for subfamily,nb in subfamily2nb.items() :
         nb = int(nb)
-
         if nb < args.min_size :
             continue
 
         fasta_filename = subfam_directory+'/'+subfamily+'.fa'
-        if not checkingMSA(fasta_filename,subfamily2defline2seqList[ subfamily ],nb) :
+        if not checkingMSA(fasta_filename,subfamily2seqList[ subfamily ],nb) :
             logging.error(subfamily+'\t'+str(nb)+' ==> ERROR')
             problematicSubfamiliesSet.add(subfamily)
             error += 1
 
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-        creatingA3m(a3m_filename,subfamily,subfamily2defline2seqList[ subfamily ])
+        creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
 
+        
+    # releasing memory of subfamily2defline2seqList
+    print( sys.getsizeof(subfamily2seqList) )
+    subfamily2seqList.clear()
+    print( sys.getsizeof(subfamily2seqList) )
+    subfamily2seqList = None
+    print( sys.getsizeof(subfamily2seqList) )
+
+    
     if error != 0 :
         logging.info('\n'+str(error)+' subfamilies failed to checking\n')
-
 
     logging.info('done\n')
     print('done')
@@ -305,26 +312,25 @@ if __name__ == "__main__":
     logging.info('creating the hhblits database... ('+str(t2)+')')
 
     # parallelizing
+          
+    error = 0
     results = list()
-    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
-    
+    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory    
     for subfamily,nb in subfamily2nb.items() :
-
         nb = int(nb)
         if nb < args.min_size :
             continue
 
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-        results.append( pool.apply_async( creatingFiles4HhblitsDb, args= (a3m_filename,hhm_directory,) ))      
+        results.append( pool.apply_async( creatingFiles4HhblitsDb, args= (a3m_filename,hhm_directory,) ) )
+            
     pool.close() # Prevents any more tasks from being submitted to the pool
     pool.join() # Wait for the worker processes to exit
 
-
-    error = 0
     for elt in results :
-        subfamily,result = elt.get()
+        subfamily,result,errorMsg = elt.get()
         if not  result :
-            logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
+            logging.error('\t'+subfamily+' '+'==>'+' '+'Error'+' ('+errorMsg+')' )
             problematicSubfamiliesSet.add(subfamily)
             error += 1
 
@@ -369,9 +375,7 @@ if __name__ == "__main__":
     # parallelizing
     results = list()
     pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
-    
     for subfamily,nb in subfamily2nb.items() :
-
         nb = int(nb)
         if nb < args.min_size :
             continue
