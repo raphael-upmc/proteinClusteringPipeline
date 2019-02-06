@@ -137,8 +137,9 @@ def creatingA3m(a3m_filename,subfamily,seqList) :
     output = open(a3m_filename,'w')
     output.write('#'+subfamily+'\n')
     for record in seqList :
-        SeqIO.write(record,output,'fasta')
-
+        output.write(record+'\n')
+    output.close()
+    
 def readingMsa(msa_filename,orf2family) :
     subfamily2seqList = dict()
     defline = None
@@ -149,10 +150,10 @@ def readingMsa(msa_filename,orf2family) :
             if defline != None and defline in orf2family : # store the sequence
                 subfamily = orf2family[ defline ]
                 if subfamily in subfamily2seqList :
-                    subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
+                    subfamily2seqList[ subfamily ].append( '>'+defline+'\n'+seq )
                 else:
                     subfamily2seqList[ subfamily ] = list()
-                    subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
+                    subfamily2seqList[ subfamily ].append( '>'+defline+'\n'+seq )
 
             # new sequence to create
             defline = line.replace('>','').split()[0]
@@ -164,19 +165,19 @@ def readingMsa(msa_filename,orf2family) :
     if defline != None and defline in orf2family : # store the sequence
         subfamily = orf2family[ defline ]
         if subfamily in subfamily2seqList :
-            subfamily2seqList[ subfamily ].append( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
+            subfamily2seqList[ subfamily ].append( '>'+defline+'\n'+seq )
         else:
             subfamily2seqList[ subfamily ] = list()
-            subfamily2seqList[ subfamily ].append ( SeqRecord(seq=Seq(seq,IUPAC.protein),id=defline,description="") )
+            subfamily2seqList[ subfamily ].append( '>'+defline+'\n'+seq )
 
     return subfamily2seqList
         
 def checkingMSA(fasta_filename,seqList,nb) :
     msaSet = set()
     for record in seqList :
-        msaSet.add(record.id)
-    
-    
+        defline = record.split('\n')[0].replace('>','')
+        msaSet.add(defline)
+        
     fastaSet = set()
     cpt = 0
     for record in SeqIO.parse(fasta_filename,'fasta') :
@@ -286,17 +287,13 @@ if __name__ == "__main__":
             problematicSubfamiliesSet.add(subfamily)
             error += 1
 
+        
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
         creatingA3m(a3m_filename,subfamily,subfamily2seqList[ subfamily ])
 
         
     # releasing memory of subfamily2defline2seqList
-    print( sys.getsizeof(subfamily2seqList) )
     subfamily2seqList.clear()
-    print( sys.getsizeof(subfamily2seqList) )
-    subfamily2seqList = None
-    print( sys.getsizeof(subfamily2seqList) )
-
     
     if error != 0 :
         logging.info('\n'+str(error)+' subfamilies failed to checking\n')
@@ -336,7 +333,6 @@ if __name__ == "__main__":
 
     if error != 0 :
         logging.info('\n'+str(error)+' subfamilies failed to be transformed into hhm\n')
-
 
     # removing problematic subfamilies to avoid error during the hhblits db creation
     if len(problematicSubfamiliesSet) != 0 :
