@@ -9,9 +9,14 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import argparse
 import logging
-from datetime import date, time, datetime
-import multiprocessing as mp
+from datetime import datetime
 
+from multiprocessing.dummy import Pool as ThreadPool
+from concurrent.futures import ProcessPoolExecutor,wait
+
+
+import time
+import subprocess
 
 # add these line in your ~/.bashrc file:
 # export HHLIB=/home/meheurap/programs/hhsuite-3.0-beta.3-Linux
@@ -49,6 +54,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     
     # reformat.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
+#    print(cmd)
     status = os.system(cmd)
     if status != 0 :
         # sys.exit(cmd)
@@ -62,6 +68,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
+#    print(cmd)
     status = os.system(cmd)
     if status != 0 :
 #        print(a3m_filename+' has no sequences')
@@ -77,6 +84,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
+#    print(cmd)
     status = os.system(cmd)
     if status != 0:
         # sys.exit(cmd)
@@ -309,31 +317,44 @@ if __name__ == "__main__":
     logging.info('creating the hhblits database... ('+str(t2)+')')
 
     # parallelizing
-          
+    cpt = 0
     error = 0
     results = list()
-    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory    
+    print('before pool')
+    pool = ProcessPoolExecutor(args.cpu - 1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
+    print('after pool')
     for subfamily,nb in subfamily2nb.items() :
         nb = int(nb)
         if nb < args.min_size :
             continue
 
+        cpt += 1
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
-        results.append( pool.apply_async( creatingFiles4HhblitsDb, args= (a3m_filename,hhm_directory,) ) )
-            
-    pool.close() # Prevents any more tasks from being submitted to the pool
-    pool.join() # Wait for the worker processes to exit
+        future = pool.submit( creatingFiles4HhblitsDb,a3m_filename,hhm_directory )
+        results.append(future)
+        
+        if cpt == 100 :
+            print('break')
+            break
 
+    print(wait(results))
+    
     for elt in results :
-        subfamily,result,errorMsg = elt.get()
+        subfamily,result,errorMsg = elt.result()
+        print(subfamily+'\t'+errorMsg)
         if not  result :
             logging.error('\t'+subfamily+' '+'==>'+' '+'Error'+' ('+errorMsg+')' )
             problematicSubfamiliesSet.add(subfamily)
             error += 1
 
+    pool.shutdown()
+    
     if error != 0 :
         logging.info('\n'+str(error)+' subfamilies failed to be transformed into hhm\n')
 
+
+
+    
     # removing problematic subfamilies to avoid error during the hhblits db creation
     if len(problematicSubfamiliesSet) != 0 :
         logging.info('removing problematic subfamilies to avoid error during the hhblits db creation. Those files will not be considered for the Hmm-Hmm comparison')
@@ -370,7 +391,7 @@ if __name__ == "__main__":
 
     # parallelizing
     results = list()
-    pool = mp.Pool(processes=args.cpu,maxtasksperchild=1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
+    pool = ProcessPoolExecutor(args.cpu - 1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
     for subfamily,nb in subfamily2nb.items() :
         nb = int(nb)
         if nb < args.min_size :
@@ -383,17 +404,19 @@ if __name__ == "__main__":
         hhm_filename = os.path.abspath(hhm_directory+'/'+subfamily+'.hhm')
         hhblits_database = hhblits_directory+'/'+'db'
 
-        results.append( pool.apply_async( runningHhblits, args= (hhm_filename,hhblits_database,hhr_filename,) ))      
-    pool.close() # Prevents any more tasks from being submitted to the pool
-    pool.join() # Wait for the worker processes to exit
-        
+        future = pool.submit( runningHhblits,hhm_filename,hhblits_database,hhr_filename )
+        results.append(future)
+
+    wait(results)
+    
     error = 0
     for elt in results :
-        subfamily,result = elt.get()
+        subfamily,result = elt.result()
         if not  result :
             logging.error('\t'+subfamily+' '+'==>'+' '+'Error' )
             error += 1
-
+    pool.shutdown()
+    
     if error != 0 :
         logging.info('\n'+str(error)+' hhm failed to run hhblits\n')
 
