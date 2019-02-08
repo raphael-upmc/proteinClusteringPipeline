@@ -41,6 +41,18 @@ def isEmpty(a3m_filename) :
     
     return True
 
+def hasNoSS(a3m_filename) :
+    file = open(a3m_filename,'r')
+    for line in file :
+        line = line.rstrip()
+        if re.search(r'>ss_pred',line) :
+            return False
+        else:
+            continue
+    file.close()
+    
+    return True
+
     
     
 def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
@@ -61,14 +73,13 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
-
     if status != 0 :
         return basename,'addss.pl\t'+log,False
 
     
     # checking if the .a3m is not empty
-    if isEmpty(a3m_filename) :
-        return basename,'empty',False
+    if hasNoSS(a3m_filename) :
+        return basename,'noSecondaryStructure',False
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
