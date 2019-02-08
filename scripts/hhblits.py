@@ -304,7 +304,6 @@ if __name__ == "__main__":
     logging.info('creating the hhblits database... ('+str(t2)+')')
 
     # parallelizing
-    cpt = 0
     error = 0
     results = list()
     pool = ProcessPoolExecutor(args.cpu) # start 20 worker processes and 1 maxtasksperchild in order to release memory
@@ -313,14 +312,10 @@ if __name__ == "__main__":
         if nb < args.min_size :
             continue
 
-        cpt += 1
         a3m_filename = os.path.abspath(a3m_directory+'/'+subfamily+'.a3m')
         future = pool.submit( creatingFiles4HhblitsDb,a3m_filename,hhm_directory )
         results.append(future)
         
-        if cpt == 100 :
-            print('break')
-            break
 
     wait(results)
     
