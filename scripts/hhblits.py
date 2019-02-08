@@ -10,13 +10,9 @@ from Bio.SeqRecord import SeqRecord
 import argparse
 import logging
 from datetime import datetime
-
-from multiprocessing.dummy import Pool as ThreadPool
 from concurrent.futures import ProcessPoolExecutor,wait
-
-
 import time
-import subprocess
+
 
 # add these line in your ~/.bashrc file:
 # export HHLIB=/home/meheurap/programs/hhsuite-3.0-beta.3-Linux
@@ -48,46 +44,37 @@ def isEmpty(a3m_filename) :
     
     
 def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
+
     basename = os.path.basename(a3m_filename).split('.')[0]
 
-    cpt = 0
-    
     # reformat.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
-#    print(cmd)
     status = os.system(cmd)
     if status != 0 :
-        # sys.exit(cmd)
         return basename,'reformat.pl',False
 
     # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
-        # sys.exit(a3m_filename+' has no sequences')
         return basename,'reformat.pl',False
 
     
     # addss.pl
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
-#    print(cmd)
     status = os.system(cmd)
-    if status != 0 :
-#        print(a3m_filename+' has no sequences')
-        # sys.exit(cmd)
-        return basename,'addss.pl',False
 
+    if status != 0 :
+        return basename,'addss.pl\t'+log,False
+
+    
     # checking if the .a3m is not empty
     if isEmpty(a3m_filename) :
-#        print(a3m_filename+' has no sequences')
-        # sys.exit(a3m_filename+' has no sequences')
         return basename,'empty',False
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
     cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
-#    print(cmd)
     status = os.system(cmd)
     if status != 0:
-        # sys.exit(cmd)
         return basename,'hhmake',False
     
     return basename,'worked',True
@@ -320,9 +307,7 @@ if __name__ == "__main__":
     cpt = 0
     error = 0
     results = list()
-    print('before pool')
-    pool = ProcessPoolExecutor(args.cpu - 1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
-    print('after pool')
+    pool = ProcessPoolExecutor(args.cpu) # start 20 worker processes and 1 maxtasksperchild in order to release memory
     for subfamily,nb in subfamily2nb.items() :
         nb = int(nb)
         if nb < args.min_size :
@@ -337,11 +322,10 @@ if __name__ == "__main__":
             print('break')
             break
 
-    print(wait(results))
+    wait(results)
     
     for elt in results :
-        subfamily,result,errorMsg = elt.result()
-        print(subfamily+'\t'+errorMsg)
+        subfamily,errorMsg,result = elt.result()
         if not  result :
             logging.error('\t'+subfamily+' '+'==>'+' '+'Error'+' ('+errorMsg+')' )
             problematicSubfamiliesSet.add(subfamily)
@@ -354,7 +338,7 @@ if __name__ == "__main__":
 
 
 
-    
+    #sys.exit()
     # removing problematic subfamilies to avoid error during the hhblits db creation
     if len(problematicSubfamiliesSet) != 0 :
         logging.info('removing problematic subfamilies to avoid error during the hhblits db creation. Those files will not be considered for the Hmm-Hmm comparison')
@@ -391,7 +375,7 @@ if __name__ == "__main__":
 
     # parallelizing
     results = list()
-    pool = ProcessPoolExecutor(args.cpu - 1) # start 20 worker processes and 1 maxtasksperchild in order to release memory
+    pool = ProcessPoolExecutor(args.cpu) # start 20 worker processes and 1 maxtasksperchild in order to release memory
     for subfamily,nb in subfamily2nb.items() :
         nb = int(nb)
         if nb < args.min_size :
