@@ -187,6 +187,7 @@ if __name__ == "__main__":
     parser.add_argument('--min-size',type=int,default=5,help='minimal size of the protein families to keep (default: 5)')
     parser.add_argument('--force',action='store_true',default=False,help='force MCL clustering (default: False)')
     parser.add_argument('--fasta',action='store_true',default=False,help='creating a folder with fasta file for each family (default: False)')
+    parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mcl (default: 1)')
     
     args = parser.parse_args()
 
@@ -227,7 +228,9 @@ if __name__ == "__main__":
     logging.info('min-size: '+str(args.min_size)+'\n')
     logging.info('force: '+str(args.force))
     logging.info('fasta: '+str(args.fasta)+'\n')   
-
+    logging.info('cpu: '+str(args.cpu))
+    logging.info('inflation parameter: '+str(args.I))
+    
     ###################################
     # checking if hhblits runned fine #
     ###################################
@@ -280,13 +283,13 @@ if __name__ == "__main__":
     mcl_log_filename = cwd+'/'+'logs'+'/'+'mcl.log'
     mcl_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.mcl'
 
-    cmd = "/usr/bin/mcl "+mcl_network_filename+" --abc -I 2.0 -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
+    cmd = "/usr/bin/mcl "+mcl_network_filename+" --abc -I "+str(args.I)+" -te "+str(args.cpu)+" -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
     logging.info(cmd)
     status = os.system(cmd)
     
     if status != 0 :
-        logging.error("/usr/bin/mcl has a non 0 status! exit!")
-        sys.exit("/usr/bin/mcl has a non 0 status! exit!")
+        logging.error("/usr/bin/mcl returned a non 0 status! exit!")
+        sys.exit("/usr/bin/mcl returned a non 0 status! exit!")
 
     logging.info('done\n')
 

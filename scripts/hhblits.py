@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Run all-vs-all hhblits on the subfamilies')
     parser.add_argument('config_filename', help='the path of the CONFIG_FILENAME created by the subfamilies.py script')
-    parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by mmseqs (default: 1)')
+    parser.add_argument('--cpu',type=int,default=1,help='number of CPUs used by hhblits (default: 1)')
     parser.add_argument('--min-size',type=int,default=2,help='minimal size of the protein families to consider (default: 2)')
 
     args = parser.parse_args()
