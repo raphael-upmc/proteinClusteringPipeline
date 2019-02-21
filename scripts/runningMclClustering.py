@@ -143,7 +143,7 @@ def readingHhrFile(hhr_filename,coverage_threshold,probs_threshold) :
             else:
                 sys.exit('error')
                 continue
-            if probs > probs_threshold and ( scover > coverage_threshold and qcover > coverage_threshold ) :
+            if probs > probs_threshold and ( scover > coverage_threshold or qcover > coverage_threshold ) :
                 if query == target : # removing self loop
                     continue
 
@@ -182,6 +182,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run protein sequences clustering')
     parser.add_argument('config_filename', help='the path of the CONFIG_FILE')
     parser.add_argument('--coverage',type=float,default=0.75,help='coverage threshold (default: 0.75)')
+    parser.add_argument('-I',type=float,default=2,help='mcl inflation parameter (default: 2.0)')
     parser.add_argument('--probs',type=float,default=0.95,help='probability threshold (default: 0.95)')
     parser.add_argument('--min-size',type=int,default=5,help='minimal size of the protein families to keep (default: 5)')
     parser.add_argument('--force',action='store_true',default=False,help='force MCL clustering (default: False)')
@@ -203,8 +204,9 @@ if __name__ == "__main__":
     cwd = data['directory']
     subfam2nb = data['clusters']
 
-    if os.path.exists(cwd+'/'+'familiesFasta') :
-        shutil.rmtree(cwd+'/'+'familiesFasta', ignore_errors=True)
+    if args.fasta :
+        if os.path.exists(cwd+'/'+'familiesFasta') :
+            shutil.rmtree(cwd+'/'+'familiesFasta', ignore_errors=True)
 
             
 

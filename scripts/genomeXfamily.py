@@ -67,6 +67,9 @@ next(file)
 for line in file :
     line = line.rstrip()
     orf,family = line.split('\t')
+    if orf not in orf2genome :
+        print(orf+' not present in the '+orf2family_filename+' file')
+        continue
     genome = orf2genome[ orf ]
     if genomeList == 1 and genome not in genomeSet :        
         continue
