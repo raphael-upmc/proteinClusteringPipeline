@@ -48,7 +48,7 @@ def writingCleanedFasta(fasta_filename,badSequenceList,duplicatedSeqIdSet,output
             if record.id in seqSet :
                 continue
             else:
-                seqSet.add(seqSet)
+                seqSet.add(record.id)
                 SeqIO.write(record,output,'fasta') # write only one of the duplicated sequence
                 cpt += 1
                 continue
