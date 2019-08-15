@@ -37,14 +37,16 @@ if args.genomeList != None and os.path.exists(args.genomeList) :
         genomeSet.add(genome)
     file.close()
 
-familyList = 0    
+familyListParam = 0    
 if args.familyList != None and os.path.exists(args.familyList) :    
-    familyList = 1
+    familyListParam = 1
     familySet = set()
+    familyList = list()
     file = open(args.familyList,'r')
     for line in file :
         family = line.rstrip()
         familySet.add(family)
+        familyList.append(family)
     file.close()
     
     
@@ -74,7 +76,7 @@ for line in file :
     if genomeList == 1 and genome not in genomeSet :        
         continue
 
-    if familyList == 1 and family not in familySet :        
+    if familyListParam == 1 and family not in familySet :        
         continue
 
     genome2family[ genome ].add(family)
@@ -86,6 +88,7 @@ for line in file :
         genome2family2count[genome][family] += 1
 file.close()
 
+
 familySet = set()
 for family,genomeSet in family2genomes.items() :
     if len(genomeSet) < family_threshold :
@@ -93,12 +96,15 @@ for family,genomeSet in family2genomes.items() :
     else:
         familySet.add(family)
 
+if familyListParam == 0 :
+    familyList = list(familySet)
+        
 family2profile = defaultdict(list)
 output = open(args.matrix_filename,'w')
-output.write('\t'+'\t'.join(list(familySet))+'\n')
+output.write('\t'+'\t'.join(familyList)+'\n')
 for genome in genome2family :
     output.write(genome)
-    for family in familySet :
+    for family in familyList :
         if family  in genome2family[ genome ]  :
             if not args.count :
                 output.write('\t'+'1')
