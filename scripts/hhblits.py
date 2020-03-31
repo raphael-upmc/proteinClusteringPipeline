@@ -74,7 +74,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     cmd = '/groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
-        return basename,'addss.pl\t'+log,False
+        return basename,'addss.pl',False
 
     
     # checking if the .a3m is not empty
