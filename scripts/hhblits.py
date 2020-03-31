@@ -22,7 +22,7 @@ import time
 
 def runningHhblits(hhm_filename,hhblits_database,hhr_filename) :
     basename = os.path.basename(hhm_filename).split('.')[0]
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i '+hhm_filename+' -o '+hhr_filename+' -d '+hhblits_database+'  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1'
+    cmd = '/groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhblits -i '+hhm_filename+' -o '+hhr_filename+' -d '+hhblits_database+'  -v 0 -p 50 -E 0.001 -z 1 -Z 32000 -B 0 -b 0 -n 2 -cpu 1'
     status = os.system(cmd)
     if status == 0 :
         return basename,True
@@ -60,7 +60,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
     basename = os.path.basename(a3m_filename).split('.')[0]
 
     # reformat.pl
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
+    cmd = '/groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/reformat.pl a3m a3m '+a3m_filename+' '+a3m_filename+' -M 50 -r >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return basename,'reformat.pl',False
@@ -71,7 +71,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
 
     
     # addss.pl
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
+    cmd = '/groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/scripts/addss.pl '+a3m_filename+' '+a3m_filename+' -a3m >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return basename,'addss.pl\t'+log,False
@@ -83,7 +83,7 @@ def creatingFiles4HhblitsDb(a3m_filename,hhm_directory) :
 
     # hhmake
     hhm_filename = hhm_directory+'/'+basename+'.hhm'
-    cmd = '/home/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
+    cmd = '/groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/bin/hhmake -add_cons -M 50 -diff 100 -i '+a3m_filename+' -o '+hhm_filename+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0:
         return basename,'hhmake',False
@@ -118,7 +118,7 @@ def creatingHhblitsDb(output_directory) :
     if status != 0 :
         return False
 
-    cmd = 'cstranslate -A /home/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/cs219.lib -D /home/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/context_data.lib -I a3m -x 0.3 -c 4'+' -f -i '+output_directory+'/'+'db_a3m'+' -o '+output_directory+'/'+'db_cs219'+' -b'+' >/dev/null 2>&1'
+    cmd = 'cstranslate -A /groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/cs219.lib -D /groups/banfield/users/meheurap/programs/hhsuite-3.0-beta.3-Linux/data/context_data.lib -I a3m -x 0.3 -c 4'+' -f -i '+output_directory+'/'+'db_a3m'+' -o '+output_directory+'/'+'db_cs219'+' -b'+' >/dev/null 2>&1'
     status = os.system(cmd)
     if status != 0 :
         return False
