@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     db_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB'
     log_filename = directory+"/logs/"+'mmseqs_createdb.log'
-    mmseqs_db_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createdb '+fasta_filename+' '+db_filename+' >'+log_filename
+    mmseqs_db_cmd = '/shared/software/bin/mmseqs createdb '+fasta_filename+' '+db_filename+' >'+log_filename
     logging.info('running '+mmseqs_db_cmd)
     status = os.system(mmseqs_db_cmd)
 
@@ -131,20 +131,20 @@ if __name__ == "__main__":
 
     cluster_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu'
     log_filename = directory+'/logs/'+'mmseqs_cluster.log'
-    mmseqs_cluster_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c '+str(args.coverage)+' --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'+' >'+log_filename
+    mmseqs_cluster_cmd = '/shared/software/bin/mmseqs cluster '+db_filename+' '+cluster_filename+' '+tmp_directory+' '+'--threads '+str(args.cpu)+' -s 7.5 -c '+str(args.coverage)+' --cov-mode 0 --max-seqs 5000 -e 0.001 --cluster-mode 0'+' >'+log_filename
     logging.info('running '+mmseqs_cluster_cmd)
     status = os.system(mmseqs_cluster_cmd)
 
 
     tsv_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu.tsv'
     log_filename = directory+'/logs/'+'mmseqs_createtsv.log'
-    mmseqs_createtsv_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename+' >'+log_filename
+    mmseqs_createtsv_cmd = '/shared/software/bin/mmseqs createtsv '+db_filename+' '+db_filename+' '+cluster_filename+' '+tsv_filename+' >'+log_filename
     logging.info('running '+mmseqs_createtsv_cmd)
     status = os.system(mmseqs_createtsv_cmd)
 
     msa_filename = mmseqs_directory+'/'+os.path.basename(fasta_filename)+'.mmseqsDB_clu_msa'
     log_filename = directory+'/logs/'+'mmseqs_results2msa.log'
-    mmseqs_result2msa_cmd = '/home/meheurap/programs/mmseqs2/bin/mmseqs result2msa '+db_filename+' '+db_filename+' '+cluster_filename+' '+msa_filename+' --diff 100 --threads '+str(args.cpu)+' >'+log_filename
+    mmseqs_result2msa_cmd = '/shared/software/bin/mmseqs result2msa '+db_filename+' '+db_filename+' '+cluster_filename+' '+msa_filename+' --diff 100 --threads '+str(args.cpu)+' >'+log_filename
     logging.info('running '+mmseqs_result2msa_cmd)
     status = os.system(mmseqs_result2msa_cmd)
 

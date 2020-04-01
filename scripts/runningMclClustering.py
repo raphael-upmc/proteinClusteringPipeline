@@ -283,13 +283,13 @@ if __name__ == "__main__":
     mcl_log_filename = cwd+'/'+'logs'+'/'+'mcl.log'
     mcl_filename = cwd+'/'+'hhblits'+'/'+'hhr.network.mcl'
 
-    cmd = "/usr/bin/mcl "+mcl_network_filename+" --abc -I "+str(args.I)+" -te "+str(args.cpu)+" -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
+    cmd = "/shared/software/bin/mcl "+mcl_network_filename+" --abc -I "+str(args.I)+" -te "+str(args.cpu)+" -o "+mcl_filename+' >'+mcl_log_filename+' 2>&1'
     logging.info(cmd)
     status = os.system(cmd)
     
     if status != 0 :
-        logging.error("/usr/bin/mcl returned a non 0 status! exit!")
-        sys.exit("/usr/bin/mcl returned a non 0 status! exit!")
+        logging.error("/shared/software/bin/mcl returned a non 0 status! exit!")
+        sys.exit("/shared/software/bin/mcl returned a non 0 status! exit!")
 
     logging.info('done\n')
 
